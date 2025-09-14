@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Administrador de Precios</h1>
+<form method="post" class="card">
+  {% for k,v in items %}
+    <label>{{ k }}</label>
+    <input name="price_{{k}}" type="number" step="0.01" value="{{ v }}">
+  {% endfor %}
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

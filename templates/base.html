@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subite</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="brand">Subite</div>
+      <div>
+        <a href="{{ url_for('index') }}">Inicio</a>
+        <a href="{{ url_for('shared') }}">Compartidos</a>
+        <a href="{{ url_for('parcels') }}">Encomiendas</a>
+        <a href="{{ url_for('airport') }}">Aeropuerto</a>
+        <a href="{{ url_for('exclusive') }}">Exclusivo RC↔CBA</a>
+        <a href="{{ url_for('anywhere') }}">A cualquier destino</a>
+        <a href="{{ url_for('admin_dashboard') }}">Admin</a>
+      </div>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+    <footer>© {{ 2025 }} Subite — Estilo minimalista clásico</footer>
+  </div>
+</body>
+</html>

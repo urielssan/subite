@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Horarios</h1>
+<div class="card">
+  <form method="post">
+    <label>Ruta</label>
+    <select name="route"><option value="RC-CBA">Río Cuarto → Córdoba</option><option value="CBA-RC">Córdoba → Río Cuarto</option></select>
+    <label>Fecha</label><input type="date" name="date" required>
+    <label>Hora</label><input type="time" name="time" required>
+    <label>Cupo</label><input type="number" name="capacity" value="4" min="1" max="8">
+    <button type="submit">Agregar / Actualizar</button>
+  </form>
+</div>
+<div class="card">
+  <table class="table">
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Cupo</th><th>Reservados</th></tr></thead>
+    <tbody>
+      {% for s in scheds %}
+      <tr>
+        <td>{{ s.date }}</td>
+        <td>{{ s.time }}</td>
+        <td>{{ 'RC→CBA' if s.route=='RC-CBA' else 'CBA→RC' }}</td>
+        <td>{{ s.capacity }}</td>
+        <td>{{ booked_seats(s.id) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Aeropuerto Exclusivo</h1>
+  <form method="post">
+    <label>Fecha</label><input type="date" name="date" required>
+    <label>Hora</label><input type="time" name="time" required>
+    <label>Nombre y apellido</label><input name="name" required>
+    <label>Teléfono</label><input name="phone" required>
+    <label>Email</label><input name="email" type="email">
+    <label>Dirección de retiro</label><input name="pickup_address" required>
+    <button type="submit">Reservar</button>
+  </form>
+</div>
+{% endblock %}

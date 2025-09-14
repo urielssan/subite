@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="grid">
+    <div class="card">
+      <h2>Viajes Compartidos</h2>
+      <p>Elegí fecha, ruta y cantidad de pasajeros. Mostramos horarios con cupo (4 por auto).</p>
+      <a href="{{ url_for('shared') }}"><button>Agendar</button></a>
+    </div>
+    <div class="card">
+      <h2>Encomiendas</h2>
+      <p>Hasta 2 bultos de 5kg por reserva. Misma logística que los compartidos.</p>
+      <a href="{{ url_for('parcels') }}"><button>Enviar</button></a>
+    </div>
+    <div class="card">
+      <h2>Aeropuerto Exclusivo</h2>
+      <p>Auto a disposición, retiro por domicilio y traslado al aeropuerto.</p>
+      <a href="{{ url_for('airport') }}"><button>Reservar</button></a>
+    </div>
+    <div class="card">
+      <h2>Exclusivo RC ↔ CBA</h2>
+      <p>Traslado puerta a puerta con precio fijo.</p>
+      <a href="{{ url_for('exclusive') }}"><button>Reservar</button></a>
+    </div>
+    <div class="card">
+      <h2>A cualquier destino</h2>
+      <p>Calculamos precio por km (demo o API).</p>
+      <a href="{{ url_for('anywhere') }}"><button>Cotizar</button></a>
+    </div>
+  </div>
+{% endblock %}

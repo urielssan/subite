@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Encomiendas</h1>
+  <form method="post">
+    <label>Ruta</label>
+    <select name="route" required>
+      <option value="RC-CBA">Río Cuarto → Córdoba</option>
+      <option value="CBA-RC">Córdoba → Río Cuarto</option>
+    </select>
+    <label>Fecha</label>
+    <input type="date" name="date" required>
+    <label>Cantidad de bultos (máx 2)</label>
+    <select name="parcels">
+      <option>1</option><option>2</option>
+    </select>
+    <h3>Datos de contacto</h3>
+    <label>Nombre y apellido</label><input name="name" required>
+    <label>Teléfono</label><input name="phone" required>
+    <label>Email</label><input name="email" type="email">
+    <button type="submit">Confirmar</button>
+  </form>
+</div>
+{% endblock %}
