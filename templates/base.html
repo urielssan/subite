@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Subite</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
+  
     <div class="nav">
       <div class="brand">Subite</div>
       <div>
@@ -19,7 +22,9 @@
         <a href="{{ url_for('anywhere') }}">A cualquier destino</a>
         <a href="{{ url_for('admin_dashboard') }}">Admin</a>
       </div>
+      
     </div>
+    <div class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -28,7 +33,7 @@
       {% endif %}
     {% endwith %}
     {% block content %}{% endblock %}
-    <footer>© {{ 2025 }} Subite — Estilo minimalista clásico</footer>
+    <footer>© {{ 2025 }} Subite — pagina Creada por amargo.com.ar</footer>
   </div>
 </body>
 </html>
