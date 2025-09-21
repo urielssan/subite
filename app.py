@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from datetime import datetime, date, time as dtime
+from datetime import datetime, date, timedelta as dtime
 from pathlib import Path
 from functools import wraps
 import json
@@ -26,6 +26,20 @@ KM_API_URL = os.getenv('KM_API_URL')  # Optional, fallback to demo
 DEFAULT_SLOTS = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
 CAPACITY_PER_TRIP = 4
 
+DESTINOS_RIO_CUARTO = [
+    "Plaza General Paz - Rotonda Moretti, Río Cuarto, Córdoba, Argentina",
+    "Baigorria 26, Río Cuarto, Córdoba, Argentina",
+    "Parque Sarmiento, Río Cuarto, Córdoba, Argentina",
+    "Seminario Mayor Jesús Buen Pastor, Río Cuarto, Córdoba, Argentina",
+    "Constitución, X5800 Río Cuarto, Córdoba, Argentina"
+]
+DESTINOS_CORDOBA_CAPITAL = [
+    "Av. Vélez Sarsfield & San Luis, Córdoba, Argentina",
+    "Plaza de las Américas, Córdoba, Argentina",
+    "Rotonda Almirante Guillermo Brown (Barrio Las Flores), Córdoba, Argentina",
+    "Plaza España, Córdoba, Argentina"
+]
+
 # --- Models ---
 class PriceConfig(db.Model):
     key = db.Column(db.String(64), primary_key=True)
@@ -47,6 +61,7 @@ class SharedBooking(db.Model):
     phone = db.Column(db.String(40), nullable=False)
     email = db.Column(db.String(120), nullable=True)
     pickup_address = db.Column(db.String(200), nullable=True)
+    final_address = db.Column(db.String(200), nullable=True)
     extra_luggage = db.Column(db.Boolean, default=False)
     pet = db.Column(db.Boolean, default=False)
     total_price = db.Column(db.Float, nullable=False)
@@ -71,6 +86,7 @@ class AirportExclusive(db.Model):
     phone = db.Column(db.String(40), nullable=False)
     email = db.Column(db.String(120), nullable=True)
     pickup_address = db.Column(db.String(200), nullable=False)
+    final_address = db.Column(db.String(200), nullable=False)
     total_price = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -83,6 +99,7 @@ class CityExclusive(db.Model):
     phone = db.Column(db.String(40), nullable=False)
     email = db.Column(db.String(120), nullable=True)
     pickup_address = db.Column(db.String(200), nullable=False)
+    final_address = db.Column(db.String(200), nullable=False)
     total_price = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -90,8 +107,10 @@ class AnywhereBooking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.String(5), nullable=False)
-    origin = db.Column(db.String(200), nullable=False)
-    destination = db.Column(db.String(200), nullable=False)
+    origin_city = db.Column(db.String(200), nullable=False)
+    origin_street = db.Column(db.String(200), nullable=False)
+    destination_street = db.Column(db.String(200), nullable=False)
+    destination_city = db.Column(db.String(200), nullable=False)
     km_estimate = db.Column(db.Float, nullable=True)
     name = db.Column(db.String(80), nullable=False)
     phone = db.Column(db.String(40), nullable=False)
@@ -100,6 +119,34 @@ class AnywhereBooking(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # --- Helpers ---
+def obtener_precio(ciudad, llegada, precio_km):
+    url = "https://api.refreshagency.duckdns.org/precio"
+    payload = {"ciudad": ciudad, "llegada": llegada, "precio_km": precio_km}  # usar 'llegada' en lugar de 'destino'
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("precio")
+    except requests.RequestException as e:
+        print(f"Error al llamar a la API: {e}")
+        return None
+
+def obtener_precio_larga_distancia(ciudad_origen, calle_origen, ciudad_destino, calle_destino, precio_km):
+    url = "https://api.refreshagency.duckdns.org/precio_general"
+    payload = {"ciudad_origen": ciudad_origen, "calle_origen": calle_origen, "ciudad_destino": ciudad_destino, "calle_destino": calle_destino, "precio_km": precio_km}  # usar 'llegada' en lugar de 'destino'
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        return (data.get("precio"), data.get("km"))
+    except requests.RequestException as e:
+        print(f"Error al llamar a la API: {e}")
+        return None
+
 def seed_prices():
     seed_path = DATA_DIR / 'pricing_seed.json'
     if seed_path.exists():
@@ -138,18 +185,6 @@ def pickup_surcharge(address: str) -> float:
     # Demo fallback
     return 3000.0 if address and address.strip() else 0.0
 
-def anywhere_price_km(km: float) -> float:
-    km_price = price("KM_PRICE", 500.0)
-    if KM_API_URL:
-        try:
-            resp = requests.post(KM_API_URL, json={"km": km}, timeout=6)
-            if resp.ok:
-                data = resp.json()
-                return float(data.get("total_price", km * km_price))
-        except Exception:
-            pass
-    return km * km_price
-
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -185,7 +220,11 @@ def shared():
             free = max(0, s.capacity - taken)
             availability.append((s, free, free >= passengers))
         return render_template('shared_slots.html', route=route, on_date=on_date, passengers=passengers, availability=availability)
-    return render_template('shared.html')
+
+    # GET inicial
+    today = date.today() + dtime(days=1)
+
+    return render_template('shared.html', today=today.isoformat(), form_data={})
 
 @app.route('/shared/book/<int:schedule_id>', methods=['GET', 'POST'])
 def shared_book(schedule_id):
@@ -197,39 +236,172 @@ def shared_book(schedule_id):
         flash('Ese horario ya no tiene cupo suficiente.', 'error')
         return redirect(url_for('shared'))
 
+    # Determinar destinos según ruta
+    if sch.route == 'RC-CBA':
+        llegada_options = DESTINOS_CORDOBA_CAPITAL
+        retiro_options = DESTINOS_RIO_CUARTO
+        llegada_ciudad = "Córdoba"
+    else:
+        llegada_options = DESTINOS_RIO_CUARTO
+        retiro_options = DESTINOS_CORDOBA_CAPITAL
+        llegada_ciudad = "Río Cuarto"
+
     if request.method == 'POST':
         name = request.form.get('name')
         phone = request.form.get('phone')
         email = request.form.get('email')
         pickup_address = request.form.get('pickup_address', '').strip()
+        pickup_address_custom = request.form.get('pickup_address_custom', '').strip()
+        final_address = request.form.get('final_address_select')
+        final_address_custom = request.form.get('final_address_custom', '').strip()
         extra_luggage = bool(request.form.get('extra_luggage'))
         pet = bool(request.form.get('pet'))
+
+        surcharge = 0.0
+        # Si seleccionó "Otro", usamos la dirección personalizada
+        if final_address == "otro" and final_address_custom:
+            final_address = final_address_custom
+            # Costo adicional si la ciudad es Córdoba
+            if sch.route == 'RC-CBA':
+                km_price = price("KM_PRICE")
+                surcharge += obtener_precio("cordoba", final_address, km_price)
+        
+        if pickup_address == "otro" and pickup_address_custom:
+            pickup_address = pickup_address_custom
+            # Costo adicional si la ciudad es Córdoba
+            if sch.route == 'CBA-RC':
+                km_price = price("KM_PRICE")
+                surcharge += obtener_precio("cordoba", pickup_address, km_price)
 
         base = price('BASE_SHARED_RC_CBA' if sch.route=='RC-CBA' else 'BASE_SHARED_CBA_RC', 9000.0)
         subtotal = base * passengers
         extras = 0.0
         if extra_luggage: extras += price('EXTRA_LUGGAGE', 2000.0)
         if pet: extras += price('PET', 10000.0)
-        pickup = pickup_surcharge(pickup_address)
+        total = subtotal + extras + surcharge
 
-        total = subtotal + extras + pickup
-
-        booking = SharedBooking(schedule_id=sch.id, passengers=passengers, name=name, phone=phone,
-                                email=email, pickup_address=pickup_address, extra_luggage=extra_luggage,
-                                pet=pet, total_price=total)
+        booking = SharedBooking(
+            schedule_id=sch.id,
+            passengers=passengers,
+            name=name,
+            phone=phone,
+            email=email,
+            pickup_address=pickup_address,
+            final_address=final_address,
+            extra_luggage=extra_luggage,
+            pet=pet,
+            total_price=total
+        )
         db.session.add(booking)
         db.session.commit()
+
         return render_template('confirm.html', category='Viaje Compartido', total=total, details={
             'Ruta': 'Río Cuarto → Córdoba' if sch.route=='RC-CBA' else 'Córdoba → Río Cuarto',
             'Fecha': sch.date.isoformat(),
             'Hora': sch.time,
             'Pasajeros': passengers,
-            'Retiro a domicilio': 'Sí' if pickup_address else 'No',
+            'Dirección de retiro': pickup_address,
+            'Dirección de llegada': final_address,
             'Valija extra': 'Sí' if extra_luggage else 'No',
             'Mascota': 'Sí' if pet else 'No',
+            'Costo adicional': f"${surcharge:.0f}" if surcharge else "Ninguno"
         })
-    return render_template('shared_book.html', sch=sch, passengers=passengers, free=free)
 
+    # GET
+    tomorrow = date.today() + dtime(days=1)
+    return render_template('shared_book.html', sch=sch, passengers=passengers, free=free,
+                           llegada_options=llegada_options, retiro_options=retiro_options,
+                           tomorrow=tomorrow, config_price = price('EXTRA_LUGGAGE'),
+                           config_pet = price('PET'))
+
+
+@app.route('/airport_shared/book/<int:schedule_id>', methods=['GET', 'POST'])
+def airport_book(schedule_id):
+    sch = TripSchedule.query.get_or_404(schedule_id)
+    passengers = int(request.args.get('p', 1))
+    taken = booked_seats(schedule_id)
+    free = sch.capacity - taken
+    if passengers > free:
+        flash('Ese horario ya no tiene cupo suficiente.', 'error')
+        return redirect(url_for('shared'))
+
+    # Determinar destinos según ruta
+    if sch.route == 'RC-CBA':
+        llegada_options = DESTINOS_CORDOBA_CAPITAL
+        retiro_options = DESTINOS_RIO_CUARTO
+        llegada_ciudad = "Córdoba"
+    else:
+        llegada_options = DESTINOS_RIO_CUARTO
+        retiro_options = DESTINOS_CORDOBA_CAPITAL
+        llegada_ciudad = "Río Cuarto"
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+        pickup_address = request.form.get('pickup_address', '').strip()
+        pickup_address_custom = request.form.get('pickup_address_custom', '').strip()
+        final_address = request.form.get('final_address_select')
+        final_address_custom = request.form.get('final_address_custom', '').strip()
+        extra_luggage = bool(request.form.get('extra_luggage'))
+        pet = bool(request.form.get('pet'))
+
+        surcharge = 0.0
+        # Si seleccionó "Otro", usamos la dirección personalizada
+        if final_address == "otro" and final_address_custom:
+            final_address = final_address_custom
+            # Costo adicional si la ciudad es Córdoba
+            if sch.route == 'RC-CBA':
+                km_price = price("KM_PRICE")
+                surcharge += obtener_precio("cordoba", final_address, km_price)
+        
+        if pickup_address == "otro" and pickup_address_custom:
+            pickup_address = pickup_address_custom
+            # Costo adicional si la ciudad es Córdoba
+            if sch.route == 'CBA-RC':
+                km_price = price("KM_PRICE")
+                surcharge += obtener_precio("cordoba", pickup_address, km_price)
+
+        base = price('BASE_SHARED_RC_CBA' if sch.route=='RC-CBA' else 'BASE_SHARED_CBA_RC', 9000.0)
+        subtotal = base * passengers
+        extras = 0.0
+        if extra_luggage: extras += price('EXTRA_LUGGAGE', 2000.0)
+        if pet: extras += price('PET', 10000.0)
+        total = subtotal + extras + surcharge
+
+        booking = SharedBooking(
+            schedule_id=sch.id,
+            passengers=passengers,
+            name=name,
+            phone=phone,
+            email=email,
+            pickup_address=pickup_address,
+            final_address=final_address,
+            extra_luggage=extra_luggage,
+            pet=pet,
+            total_price=total
+        )
+        db.session.add(booking)
+        db.session.commit()
+
+        return render_template('confirm.html', category='Viaje Compartido', total=total, details={
+            'Ruta': 'Río Cuarto → Córdoba' if sch.route=='RC-CBA' else 'Córdoba → Río Cuarto',
+            'Fecha': sch.date.isoformat(),
+            'Hora': sch.time,
+            'Pasajeros': passengers,
+            'Dirección de retiro': pickup_address,
+            'Dirección de llegada': final_address,
+            'Valija extra': 'Sí' if extra_luggage else 'No',
+            'Mascota': 'Sí' if pet else 'No',
+            'Costo adicional': f"${surcharge:.0f}" if surcharge else "Ninguno"
+        })
+
+    # GET
+    tomorrow = date.today() + dtime(days=1)
+    return render_template('airport_book.html', sch=sch, passengers=passengers, free=free,
+                           llegada_options=llegada_options, retiro_options=retiro_options,
+                           tomorrow=tomorrow, config_price = price('EXTRA_LUGGAGE'),
+                           config_pet = price('PET'))
 # Parcels (Encomiendas)
 @app.route('/parcels', methods=['GET', 'POST'])
 def parcels():
@@ -267,22 +439,72 @@ def airport():
     if request.method == 'POST':
         date_str = request.form.get('date')
         time_str = request.form.get('time')
-        name = request.form.get('name'); phone = request.form.get('phone'); email = request.form.get('email')
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
         pickup_address = request.form.get('pickup_address')
+        final_address = request.form.get('final_address')
 
+        # Validar fecha
         try:
             on_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except Exception:
-            flash('Fecha inválida', 'error'); return redirect(url_for('airport'))
+            flash('Fecha inválida', 'error')
+            return render_template('airport.html', today=date.today().isoformat(), hour="00:00", form_data=request.form)
 
+        # Validar hora
+        try:
+            input_time = datetime.strptime(time_str, '%H:%M').time()
+        except Exception:
+            flash('Hora inválida', 'error')
+            return render_template('airport.html', today=date.today().isoformat(), hour="00:00", form_data=request.form)
+
+        # Validación hora mínima si es hoy
+        if on_date == date.today():
+            limit = (datetime.now() + dtime(hours=2)).time()
+            if input_time < limit:
+                flash(f"La hora mínima para hoy es {limit.strftime('%H:%M')}", 'error')
+                return render_template(
+                    'airport.html',
+                    today=date.today().isoformat(),
+                    hour=f"{limit.hour:02d}:{limit.minute:02d}",
+                    form_data=request.form
+                )
+
+        # Calcular precio
         total = price('AIRPORT_EXCLUSIVE', 60000.0)
-        b = AirportExclusive(date=on_date, time=time_str, name=name, phone=phone, email=email,
-                             pickup_address=pickup_address, total_price=total)
-        db.session.add(b); db.session.commit()
+
+        # Guardar reserva
+        b = AirportExclusive(
+            date=on_date,
+            time=time_str,
+            name=name,
+            phone=phone,
+            email=email,
+            pickup_address=pickup_address,
+            final_address=final_address,
+            total_price=total
+        )
+        db.session.add(b)
+        db.session.commit()
+
         return render_template('confirm.html', category='Aeropuerto Exclusivo', total=total, details={
-            'Fecha': on_date.isoformat(), 'Hora': time_str, 'Retiro': pickup_address
+            'Fecha': on_date.isoformat(),
+            'Hora': time_str,
+            'Dirección de retiro': pickup_address,
+            'Dirección de llegada': final_address
         })
-    return render_template('airport.html')
+
+    # GET inicial
+    today = date.today()
+    now = datetime.now()
+    hour_limit = now + dtime(hours=2)
+    if hour_limit.hour >= 23:
+        hour_str = "23:59"
+    else:
+        hour_str = f"{hour_limit.hour:02d}:{hour_limit.minute:02d}"
+
+    return render_template('airport.html', today=today.isoformat(), hour=hour_str, form_data={})
 
 # City exclusive RC<->CBA
 @app.route('/exclusive', methods=['GET', 'POST'])
@@ -291,47 +513,185 @@ def exclusive():
         route = request.form.get('route')
         date_str = request.form.get('date')
         time_str = request.form.get('time')
-        name = request.form.get('name'); phone = request.form.get('phone'); email = request.form.get('email')
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
         pickup_address = request.form.get('pickup_address')
+        final_address = request.form.get('final_address')
 
+        # Validar fecha
         try:
             on_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except Exception:
-            flash('Fecha inválida', 'error'); return redirect(url_for('exclusive'))
+            flash('Fecha inválida', 'error')
+            return render_template('exclusive.html', today=date.today().isoformat(), hour="00:00", form_data=request.form)
 
+        # Validar hora
+        try:
+            input_time = datetime.strptime(time_str, '%H:%M').time()
+        except Exception:
+            flash('Hora inválida', 'error')
+            return render_template('exclusive.html', today=date.today().isoformat(), hour="00:00", form_data=request.form)
+
+        # Si la fecha es hoy, hora mínima = ahora + 2h
+        if on_date == date.today():
+            limit = (datetime.now() + dtime(hours=2)).time()
+            if input_time < limit:
+                flash(f"La hora mínima para hoy es {limit.strftime('%H:%M')}", 'error')
+                return render_template(
+                    'exclusive.html',
+                    today=date.today().isoformat(),
+                    hour=f"{limit.hour:02d}:{limit.minute:02d}",
+                    form_data=request.form
+                )
+
+        # Calcular precio
         total = price('CITY_EXCLUSIVE_RC_CBA' if route=='RC-CBA' else 'CITY_EXCLUSIVE_CBA_RC', 45000.0)
-        b = CityExclusive(route=route, date=on_date, time=time_str, name=name, phone=phone, email=email,
-                          pickup_address=pickup_address, total_price=total)
-        db.session.add(b); db.session.commit()
+
+        # Guardar reserva
+        b = CityExclusive(
+            route=route,
+            date=on_date,
+            time=time_str,
+            name=name,
+            phone=phone,
+            email=email,
+            pickup_address=pickup_address,
+            final_address=final_address,
+            total_price=total
+        )
+        db.session.add(b)
+        db.session.commit()
+
         return render_template('confirm.html', category='Viaje Exclusivo', total=total, details={
             'Ruta': 'Río Cuarto → Córdoba' if route=='RC-CBA' else 'Córdoba → Río Cuarto',
-            'Fecha': on_date.isoformat(), 'Hora': time_str, 'Retiro': pickup_address
+            'Fecha': on_date.isoformat(),
+            'Hora': time_str,
+            'Dirección de retiro': pickup_address,
+            'Dirección de llegada': final_address
         })
-    return render_template('exclusive.html')
+
+    # GET inicial
+    today = date.today()
+    now = datetime.now()
+    hour_limit = now + dtime(hours=2)
+    if hour_limit.hour >= 23:
+        hour_str = "23:59"
+    else:
+        hour_str = f"{hour_limit.hour:02d}:{hour_limit.minute:02d}"
+
+    return render_template('exclusive.html', today=today.isoformat(), hour=hour_str, form_data={})
 
 # Anywhere in Argentina (demo km input / API placeholder)
 @app.route('/anywhere', methods=['GET', 'POST'])
 def anywhere():
     if request.method == 'POST':
-        date_str = request.form.get('date'); time_str = request.form.get('time')
-        origin = request.form.get('origin'); destination = request.form.get('destination')
-        km_str = request.form.get('km_estimate', '').strip()
-        name = request.form.get('name'); phone = request.form.get('phone'); email = request.form.get('email')
+
+        km_price = price("KM_PRICE")
+
+        date_str = request.form.get('date')
+        time_str = request.form.get('time')
+        origin_city = request.form.get('origin')
+        destination_city = request.form.get('destination')
+        origin_street = request.form.get('origin_street')
+        destination_street = request.form.get('destination_street')
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+
         try:
             on_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except Exception:
-            flash('Fecha inválida', 'error'); return redirect(url_for('anywhere'))
+            flash('Fecha inválida', 'error')
+            return render_template('anywhere.html', today=date.today().isoformat(), hour="00:00", form_data=request.form)
 
-        km = float(km_str) if km_str else 0.0
-        total = anywhere_price_km(km)
-        b = AnywhereBooking(date=on_date, time=time_str, origin=origin, destination=destination,
-                            km_estimate=km, name=name, phone=phone, email=email, total_price=total)
-        db.session.add(b); db.session.commit()
+        try:
+            input_time = datetime.strptime(time_str, '%H:%M').time()
+        except Exception:
+            flash('Hora inválida', 'error')
+            return render_template('anywhere.html', today=date.today().isoformat(), hour="00:00", form_data=request.form)
+
+        # Validación hora mínima si es hoy
+        if on_date == date.today():
+            limit = (datetime.now() + dtime(hours=2)).time()
+            if input_time < limit:
+                flash(f"La hora mínima para hoy es {limit.strftime('%H:%M')}", 'error')
+                return render_template(
+                    'anywhere.html',
+                    today=date.today().isoformat(),
+                    hour=f"{limit.hour:02d}:{limit.minute:02d}",
+                    form_data=request.form
+                )
+
+        # Calcular precio
+        total, km = obtener_precio_larga_distancia(
+            origin_city, origin_street, destination_city, destination_street, km_price
+        )
+
+        # Guardar reserva
+        b = AnywhereBooking(
+            date=on_date,
+            time=time_str,
+            origin_city=origin_city,
+            destination_city=destination_city,
+            origin_street=origin_street,
+            destination_street=destination_street,
+            km_estimate=km,
+            name=name,
+            phone=phone,
+            email=email,
+            total_price=total
+        )
+        db.session.add(b)
+        db.session.commit()
+
         return render_template('confirm.html', category='Viaje a cualquier destino', total=total, details={
-            'Fecha': on_date.isoformat(), 'Hora': time_str,
-            'Origen': origin, 'Destino': destination, 'KM estimados': km
+            'Fecha': on_date.isoformat(),
+            'Hora': time_str,
+            'Ciudad de origen': origin_city,
+            'Calle de origen': origin_street,
+            'Ciudad de destino': destination_city,
+            'Calle de destino': destination_street,
+            'Distancia recorrida en km': km
         })
-    return render_template('anywhere.html')
+
+    # GET inicial
+    today = date.today()
+    now = datetime.now()
+    hour_limit = now + dtime(hours=2)
+    if hour_limit.hour >= 23:
+        hour_str = "23:59"
+    else:
+        hour_str = f"{hour_limit.hour:02d}:{hour_limit.minute:02d}"
+
+    return render_template('anywhere.html', today=today.isoformat(), hour=hour_str, form_data={})
+
+@app.route('/airport_shared', methods=['GET', 'POST'])
+def airport_shared():
+    if request.method == 'POST':
+        route = request.form.get('route')  # RC-CBA or CBA-RC
+        date_str = request.form.get('date')
+        passengers = max(1, int(request.form.get('passengers', 1)))
+        try:
+            on_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except Exception:
+            flash('Fecha inválida', 'error')
+            return redirect(url_for('shared'))
+
+        ensure_day_slots(route, on_date)
+        # List availability
+        schedules = TripSchedule.query.filter_by(route=route, date=on_date).order_by(TripSchedule.time.asc()).all()
+        availability = []
+        for s in schedules:
+            taken = booked_seats(s.id)
+            free = max(0, s.capacity - taken)
+            availability.append((s, free, free >= passengers))
+        return render_template('airport_slots.html', route=route, on_date=on_date, passengers=passengers, availability=availability)
+
+    # GET inicial
+    today = date.today() + dtime(days=1)
+
+    return render_template('airport_shared.html', today=today.isoformat(), form_data={})
 
 # Admin
 @app.route('/admin/login', methods=['GET', 'POST'])

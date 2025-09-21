@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-  <h1>Viajes Compartidos</h1>
+  <h1>Aeropuerto compartido</h1>
   <form method="post">
     <label>Ruta</label>
-    <select name="route" required>
-      <option value="RC-CBA">Río Cuarto → Córdoba</option>
-      <option value="CBA-RC">Córdoba → Río Cuarto</option>
+    <select name="route" required readonly>
+        <option value="RC-CBA" selected readonly>Río Cuarto → Córdoba</option>
     </select>
     <label>Fecha ida</label>
     <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">

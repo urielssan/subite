@@ -21,13 +21,9 @@
     <input id="pickup_custom" name="pickup_address_custom" placeholder="Ingrese dirección en {{ 'Río Cuarto' if sch.route=='RC-CBA' else 'Córdoba' }} si eligió Otro" disabled>
 
     <label>Dirección de llegada</label>
-    <select id="final_select" name="final_address_select" required>
-      {% for addr in llegada_options %}
-      <option value="{{ addr }}">{{ addr }}</option>
-      {% endfor %}
-      <option value="otro">Otro {{ '(Tiene costo adicional)' if sch.route=='RC-CBA'}}</option>
+    <select id="final_select" name="final_address_select" required readonly>
+      <option value="Aeropuerto de Córdoba">Aeropuerto de Córdoba</option>
     </select>
-    <input id="final_custom" name="final_address_custom" placeholder="Ingrese dirección en {{ 'Córdoba' if sch.route=='RC-CBA' else 'Río Cuarto' }} si eligió Otro" disabled>
 
     <label>Extras</label>
     <div>
@@ -36,7 +32,7 @@
     </div>
 
     <div style="display: flex; justify-content: space-between; margin-top: 1em;">
-      <a href="{{ url_for('shared') }}"><button type="button" class="secondary">Volver</button></a>
+      <a href="{{ url_for('airport_shared') }}"><button type="button" class="secondary">Volver</button></a>
       <button type="submit">Confirmar</button>
     </div>
   </form>
@@ -52,8 +48,5 @@
     pickupCustom.disabled = this.value !== 'otro';
   });
 
-  finalSelect.addEventListener('change', function() {
-    finalCustom.disabled = this.value !== 'otro';
-  });
 </script>
 {% endblock %}

@@ -2,14 +2,73 @@
 {% block content %}
 <div class="card">
   <h1>Aeropuerto Exclusivo</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
   <form method="post">
-    <label>Fecha</label><input type="date" name="date" required>
-    <label>Hora</label><input type="time" name="time" required>
-    <label>Nombre y apellido</label><input name="name" required>
-    <label>Teléfono</label><input name="phone" required>
-    <label>Email</label><input name="email" type="email">
-    <label>Dirección de retiro</label><input name="pickup_address" required>
+    <label>Fecha</label>
+    <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
+
+    <label>Hora</label>
+    <input type="time" name="time" required min="{{ hour }}" value="{{ form_data.get('time', hour) }}">
+
+    <label>Nombre y apellido</label>
+    <input name="name" required value="{{ form_data.get('name', '') }}">
+
+    <label>Teléfono</label>
+    <input name="phone" required value="{{ form_data.get('phone', '') }}">
+
+    <label>Email</label>
+    <input name="email" type="email" value="{{ form_data.get('email', '') }}">
+
+    <label>Dirección de retiro</label>
+    <input name="pickup_address" required value="{{ form_data.get('pickup_address', '') }}">
+
+    <label>Dirección de llegada</label>
+    <input name="final_address" required value="{{ form_data.get('final_address', '') }}">
+
     <button type="submit">Reservar</button>
   </form>
 </div>
+
+<script>
+const dateInput = document.querySelector('input[name="date"]');
+const timeInput = document.querySelector('input[name="time"]');
+
+function updateMinTime() {
+    const selectedDate = new Date(dateInput.value);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    if (selectedDate.getTime() === today.getTime()) {
+        const now = new Date();
+        now.setHours(now.getHours() + 2);
+        if(now.getHours() > 23) { now.setHours(23); now.setMinutes(59); }
+
+        const hh = now.getHours().toString().padStart(2,'0');
+        const mm = now.getMinutes().toString().padStart(2,'0');
+        timeInput.min = `${hh}:${mm}`;
+
+        const [vH, vM] = timeInput.value.split(':').map(Number);
+        if(vH < now.getHours() || (vH === now.getHours() && vM < now.getMinutes())) {
+            timeInput.value = timeInput.min;
+        }
+    } else {
+        timeInput.min = '00:00';
+    }
+}
+
+// Ejecutar al cargar y al cambiar fecha
+updateMinTime();
+dateInput.addEventListener('change', updateMinTime);
+</script>
 {% endblock %}
+
