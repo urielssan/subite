@@ -362,7 +362,7 @@ def airport_book(schedule_id):
                 km_price = price("KM_PRICE")
                 surcharge += obtener_precio("cordoba", pickup_address, km_price)
 
-        base = price('BASE_SHARED_RC_CBA' if sch.route=='RC-CBA' else 'BASE_SHARED_CBA_RC', 9000.0)
+        base = price("BASE_SHARED_AIRPORT")
         subtotal = base * passengers
         extras = 0.0
         if extra_luggage: extras += price('EXTRA_LUGGAGE', 2000.0)
@@ -742,7 +742,7 @@ def admin_prices():
         flash('Precios actualizados', 'success')
         return redirect(url_for('admin_prices'))
 
-    keys = ['BASE_SHARED_RC_CBA','BASE_SHARED_CBA_RC','AIRPORT_EXCLUSIVE',
+    keys = ['BASE_SHARED_RC_CBA','BASE_SHARED_CBA_RC','BASE_SHARED_AIRPORT' , 'AIRPORT_EXCLUSIVE',
             'CITY_EXCLUSIVE_RC_CBA','CITY_EXCLUSIVE_CBA_RC','KM_PRICE','EXTRA_LUGGAGE','PET']
     items = [(k, price(k)) for k in keys]
     return render_template('admin_prices.html', items=items)
