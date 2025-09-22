@@ -9,11 +9,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="bg-grain">
   
     <div class="nav">
       <div class="brand">Subite</div>
-      <div>
+
+      <!-- botón hamburger (solo visible en móvil) -->
+      <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false" type="button">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+
+      <div class="nav-links">
         <a href="{{ url_for('index') }}">Inicio</a>
         <a href="{{ url_for('shared') }}">Compartidos</a>
         <a href="{{ url_for('parcels') }}">Encomiendas</a>
@@ -34,7 +42,30 @@
       {% endif %}
     {% endwith %}
     {% block content %}{% endblock %}
-    <footer>© {{ 2025 }} Subite — pagina Creada por amargo.com.ar</footer>
-  </div>
+  
+   </div>
+  <div class="footer-container">
+      <footer>© {{ 2025 }} Subite — pagina Creada por amargo.com.ar</footer>
+    </div>
+  <!-- Script pequeño para controlar toggle del menú -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const btn = document.querySelector('.nav-toggle');
+      const body = document.body;
+      const links = document.querySelectorAll('.nav-links a');
+
+      if (!btn) return;
+
+      btn.addEventListener('click', function () {
+        const open = body.classList.toggle('menu-open');
+        btn.setAttribute('aria-expanded', !!open);
+      });
+
+      links.forEach(a => a.addEventListener('click', function () {
+        body.classList.remove('menu-open');
+        btn.setAttribute('aria-expanded', false);
+      }));
+    });
+  </script>
 </body>
 </html>

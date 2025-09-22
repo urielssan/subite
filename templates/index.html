@@ -1,37 +1,87 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="main-container">
+<div class="container">
   <div class="grid">
+
+    <!-- Viajes Compartidos -->
     <div class="card">
-      <h2>Viajes Compartidos</h2>
-      <p>Elegí fecha, ruta y cantidad de pasajeros. Mostramos horarios con cupo (4 por auto).</p>
-      <a href="{{ url_for('shared') }}"><button>Agendar</button></a>
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/620335/pexels-photo-620335.jpeg?cs=srgb&dl=pexels-pripicart-620335.jpg&fm=jpg');"></div>
+        <h2>Viajes Compartidos</h2>
+        <p>Elegí fecha, ruta y cantidad de pasajeros. Mostramos horarios con cupo (4 por auto).</p>
+      </div>
+      <div class="button-wrapper">
+        <a href="{{ url_for('shared') }}"><button>AGENDAR</button></a>
+      </div>
     </div>
+
+
+
+
+
+
+
+
+    <!-- Encomiendas -->
     <div class="card">
-      <h2>Encomiendas</h2>
-      <p>Hasta 2 bultos de 5kg por reserva. Misma logística que los compartidos.</p>
-      <a href="{{ url_for('parcels') }}"><button>Enviar</button></a>
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/6169176/pexels-photo-6169176.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-6169176.jpg&fm=jpg');"></div>
+        <h2>Encomiendas</h2>
+        <p>Hasta 2 bultos de 5kg por reserva. Misma logística que los compartidos.</p>
+      </div>
+      <div class="button-wrapper">
+        <a href="{{ url_for('parcels') }}"><button>ENVIAR</button></a>
+      </div>
     </div>
+
+    <!-- Aeropuerto (compartido) -->
     <div class="card">
-      <h2>Aeropuerto</h2>
-      <p>Traslado compartido al Aeropuerto de Córdoba. Mostramos horarios disponibles y cupos por vehículo.</p>
-      <a href="{{ url_for('airport_shared') }}"><button>Reservar</button></a>
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/33967565/pexels-photo-33967565.jpeg?cs=srgb&dl=pexels-wellington-franzao-295720526-33967565.jpg&fm=jpg');"></div>
+        <h2>Aeropuerto</h2>
+        <p>Traslado compartido al Aeropuerto de Córdoba. Mostramos horarios disponibles y cupos por vehículo.</p>
+      </div>
+      <div class="button-wrapper">
+        <a href="{{ url_for('airport_shared') }}"><button>RESERVAR</button></a>
+      </div>
     </div>
+
+    <!-- Aeropuerto Exclusivo -->
     <div class="card">
-      <h2>Aeropuerto Exclusivo</h2>
-      <p>Auto a disposición, retiro por domicilio y traslado al aeropuerto.</p>
-      <a href="{{ url_for('airport') }}"><button>Reservar</button></a>
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/8425035/pexels-photo-8425035.jpeg?cs=srgb&dl=pexels-pavel-danilyuk-8425035.jpg&fm=jpg');"></div>
+        <h2>Aeropuerto Exclusivo</h2>
+        <p>Auto a disposición, retiro por domicilio y traslado al aeropuerto.</p>
+      </div>
+      <div class="button-wrapper">
+        <a href="{{ url_for('airport') }}"><button>RESERVAR</button></a>
+      </div>
     </div>
+
+    <!-- Exclusivo RC ↔ CBA -->
     <div class="card">
-      <h2>Exclusivo RC ↔ CBA</h2>
-      <p>Traslado puerta a puerta con precio fijo.</p>
-      <a href="{{ url_for('exclusive') }}"><button>Reservar</button></a>
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/31824698/pexels-photo-31824698.jpeg?cs=srgb&dl=pexels-tomas-asurmendi-774865545-31824698.jpg&fm=jpg');"></div>
+        <h2>Exclusivo RC ↔ CBA</h2>
+        <p>Traslado puerta a puerta con precio fijo.</p>
+      </div>
+      <div class="button-wrapper">
+        <a href="{{ url_for('exclusive') }}"><button>RESERVAR</button></a>
+      </div>
     </div>
+
+    <!-- A cualquier destino -->
     <div class="card">
-      <h2>A cualquier destino</h2>
-      <p>Calculamos precio por km (demo o API).</p>
-      <a href="{{ url_for('anywhere') }}"><button>Cotizar</button></a>
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/5025655/pexels-photo-5025655.jpeg?cs=srgb&dl=pexels-artempodrez-5025655.jpg&fm=jpg');"></div>
+        <h2>A cualquier destino</h2>
+        <p>Calculamos precio por km (demo o API).</p>
+      </div>
+      <div class="button-wrapper">
+        <a href="{{ url_for('anywhere') }}"><button>COTIZAR</button></a>
+      </div>
     </div>
+
   </div>
-  </div>
+</div>
 {% endblock %}
