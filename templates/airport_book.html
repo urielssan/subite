@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
+<div class="card card-50" >
   <h2>Confirmar reserva — {{ 'Río Cuarto → Córdoba' if sch.route=='RC-CBA' else 'Córdoba → Río Cuarto' }} — {{ sch.date }} {{ sch.time }}</h2>
   <p>Cupos libres: {{ free }}. Pasajeros: {{ passengers }}</p>
   <form method="post">

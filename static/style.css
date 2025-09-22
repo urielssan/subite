@@ -228,7 +228,14 @@ footer{
   box-shadow: 0 4px 14px rgba(17,24,39,0.14);
 }
 
-
+.card-50{
+  width: 50vw ;margin-inline: auto;
+  margin-top: 1em;
+}
+.card-10{
+  width: 20vw ;margin-inline: auto;
+  margin-top: 1em;
+}
 /* ===== Utilidades ===== */
 h1{font-size:26px;margin:8px 0 16px}
 h2{font-size:22px;margin:8px 0 12px}

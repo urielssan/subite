@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
+<div class="card card-50" >
   <h1>¡Reserva recibida!</h1>
   <p><strong>{{ category }}</strong></p>
   <h3>Detalle</h3>
   <div class="grid">
     {% for k,v in details.items() %}
-      <div class="card"><strong>{{ k }}</strong><br>{{ v }}</div>
+      <div class="card card-50 "><strong>{{ k }}</strong><br>{{ v }}</div>
     {% endfor %}
   </div>
   <h2>Total: ${{ '%.0f'|format(total) }}</h2>
