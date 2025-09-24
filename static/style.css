@@ -143,8 +143,8 @@ footer{
 .grid{
   display:grid;
   gap:16px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* compacto y responsive */
-  width: min(92vw, 960px);
+  width: 80vw;
+  grid-template-columns: 1fr;
   margin-inline: auto;
   justify-items: stretch;
 }
@@ -302,6 +302,9 @@ button.secondary{
 .card h1, .card h2 .card td{ font-family: 'Righteous', sans-serif; }
 .card p { font-family: 'Lato', sans-serif; }
 
+.grid-confirm{
+  width: 100%;
+};
 @media (max-width: 420px){
   :root{ --footer-height: 64px; }
   .footer-container{
