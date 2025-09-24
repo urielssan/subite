@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-50" >
+<div class="card card-60" >
   <h1>¡Reserva recibida!</h1>
   <p><strong>{{ category }}</strong></p>
   <h3>Detalle</h3>
-  <div class="grid">
-    {% for k,v in details.items() %}
-      <div class="card card-50 "><strong>{{ k }}</strong><br>{{ v }}</div>
-    {% endfor %}
-  </div>
+ <div class="grid">
+  {% for k,v in details.items() %}
+    <div class="detail">
+      <strong>{{ k }}</strong><br>{{ v }}
+    </div>
+  {% endfor %}
+</div>
   <h2>Total: ${{ '%.0f'|format(total) }}</h2>
   <p>Te vamos a escribir para chequear todo. ¡Gracias por elegir Subite!</p>
   <a href="{{ url_for('index') }}"><button>Volver al inicio</button></a>

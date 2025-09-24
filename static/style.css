@@ -94,16 +94,7 @@ footer{
   pointer-events: auto;
 }
 .footer-container footer{ color:#fff; font-size:12px; text-align:center; }
-@media (max-width: 420px){
-  :root{ --footer-height: 64px; }
-  .footer-container{
-    width: calc(100%);
-    border-radius: 10px;
-    height: var(--footer-height);
-    padding: 8px 12px;
-  }
-  .container{ padding-bottom: 4px; }
-}
+
 
 /* ===== NAV ===== */
 .nav {
@@ -151,11 +142,19 @@ footer{
 /* ===== CARDS ===== */
 .grid{
   display:grid;
-  grid-template-columns:(1fr);
-  gap:24px;
-  margin: 0 auto; 
-  width: 80vw;  
-  justify-items: stretch;  
+  gap:16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* compacto y responsive */
+  width: min(92vw, 960px);
+  margin-inline: auto;
+  justify-items: stretch;
+}
+
+.detail{
+  background: rgba(255,255,255,0.06);   /* o var(--card) si querés más contraste */
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  line-height: 1.35;
 }
 
 .card{
@@ -219,7 +218,7 @@ footer{
 
 /* Variante secundaria (remplaza .outline) */
 .card button.secondary{
-  background:#fff; color: var(--accent);
+  background:#5e5e5e; color: var(--accent);
   border: 1px solid rgba(17,24,39,0.12);
   box-shadow: 0 2px 10px rgba(17,24,39,0.08);
 }
@@ -230,6 +229,10 @@ footer{
 
 .card-50{
   width: 50vw ;margin-inline: auto;
+  margin-top: 1em;
+}
+.card-60{
+  width: 60vw ;margin-inline: auto;
   margin-top: 1em;
 }
 .card-10{
@@ -256,7 +259,7 @@ button.secondary{
   background:#fff; color:var(--accent); border:1px solid var(--accent);
 }
 
-.badge{ display:inline-block; padding:.25rem .5rem; border-radius:999px; border:1px solid #e5e7eb; background:white; font-size:12px }
+.badge{ display:inline-block; padding:.25rem .5rem; border-radius:999px; border:1px solid #e5e7eb; background:rgb(74, 69, 69); font-size:12px }
 .table{ width:100%; border-collapse:collapse }
 .table th,.table td{ padding:8px; border-bottom:1px solid #e5e7eb; text-align:left; font-size:14px }
 .kpi{ display:flex; gap:12px; flex-wrap:wrap }
@@ -298,3 +301,20 @@ button.secondary{
 
 .card h1, .card h2 .card td{ font-family: 'Righteous', sans-serif; }
 .card p { font-family: 'Lato', sans-serif; }
+
+@media (max-width: 420px){
+  :root{ --footer-height: 64px; }
+  .footer-container{
+    width: calc(100%);
+    border-radius: 10px;
+    height: var(--footer-height);
+    padding: 8px 12px;
+  }
+  .container{ padding-bottom: 4px; }
+
+  .card-50{
+    width: 90vw ; 
+    margin-inline: auto;
+    margin-top: 1em;
+  }
+}
