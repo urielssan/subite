@@ -78,6 +78,10 @@ class ParcelBooking(db.Model):
     total_price = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Agregado: direcciones de retiro y entrega para encomiendas
+    pickup_address = db.Column(db.String(200), nullable=True)
+    final_address = db.Column(db.String(200), nullable=True)
+
 class AirportExclusive(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
@@ -193,6 +197,9 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+def now_hhmm():
+    return datetime.now().strftime('%H:%M')
+
 # --- Routes ---
 @app.route('/')
 def index():
@@ -212,8 +219,13 @@ def shared():
             return redirect(url_for('shared'))
 
         ensure_day_slots(route, on_date)
-        # List availability
-        schedules = TripSchedule.query.filter_by(route=route, date=on_date).order_by(TripSchedule.time.asc()).all()
+        # List availability: si la fecha es hoy filtrar horarios pasados
+        if on_date == date.today():
+            now = now_hhmm()
+            schedules = TripSchedule.query.filter_by(route=route, date=on_date).filter(TripSchedule.time >= now).order_by(TripSchedule.time.asc()).all()
+        else:
+            schedules = TripSchedule.query.filter_by(route=route, date=on_date).order_by(TripSchedule.time.asc()).all()
+
         availability = []
         for s in schedules:
             taken = booked_seats(s.id)
@@ -222,13 +234,19 @@ def shared():
         return render_template('shared_slots.html', route=route, on_date=on_date, passengers=passengers, availability=availability)
 
     # GET inicial
-    today = date.today() + dtime(days=1)
-
+    today = date.today()
     return render_template('shared.html', today=today.isoformat(), form_data={})
 
 @app.route('/shared/book/<int:schedule_id>', methods=['GET', 'POST'])
 def shared_book(schedule_id):
     sch = TripSchedule.query.get_or_404(schedule_id)
+
+    # evitar reservar un horario que ya pasó si es hoy
+    if sch.date == date.today():
+        if sch.time < now_hhmm():
+            flash('Ese horario ya pasó y no puede reservarse.', 'error')
+            return redirect(url_for('shared'))
+
     passengers = int(request.args.get('p', 1))
     taken = booked_seats(schedule_id)
     free = sch.capacity - taken
@@ -318,6 +336,13 @@ def shared_book(schedule_id):
 @app.route('/airport_shared/book/<int:schedule_id>', methods=['GET', 'POST'])
 def airport_book(schedule_id):
     sch = TripSchedule.query.get_or_404(schedule_id)
+
+    # evitar reservar un horario que ya pasó si es hoy
+    if sch.date == date.today():
+        if sch.time < now_hhmm():
+            flash('Ese horario ya pasó y no puede reservarse.', 'error')
+            return redirect(url_for('airport_shared'))
+
     passengers = int(request.args.get('p', 1))
     taken = booked_seats(schedule_id)
     free = sch.capacity - taken
@@ -408,10 +433,12 @@ def parcels():
     if request.method == 'POST':
         route = request.form.get('route')
         date_str = request.form.get('date')
-        parcels = min(2, max(1, int(request.form.get('parcels', 1))))  # max 2 per booking
+        parcels_n = min(2, max(1, int(request.form.get('parcels', 1))))  # max 2 per booking
         name = request.form.get('name')
         phone = request.form.get('phone')
         email = request.form.get('email')
+        pickup_address = request.form.get('pickup_address', '').strip()
+        final_address = request.form.get('final_address', '').strip()
 
         try:
             on_date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -419,19 +446,37 @@ def parcels():
             flash('Fecha inválida', 'error')
             return redirect(url_for('parcels'))
 
+        # Validación: no permitir fechas pasadas
+        if on_date < date.today():
+            flash('La fecha no puede ser anterior a hoy.', 'error')
+            return redirect(url_for('parcels'))
+
         # Simple pricing: half of base shared per parcel as a demo
         base = price('BASE_SHARED_RC_CBA' if route=='RC-CBA' else 'BASE_SHARED_CBA_RC', 9000.0)
-        total = (base * 0.5) * parcels
-        booking = ParcelBooking(route=route, date=on_date, parcels=parcels, name=name, phone=phone, email=email, total_price=total)
+        total = (base * 0.5) * parcels_n
+        booking = ParcelBooking(
+            route=route,
+            date=on_date,
+            parcels=parcels_n,
+            name=name,
+            phone=phone,
+            email=email,
+            pickup_address=pickup_address,
+            final_address=final_address,
+            total_price=total
+        )
         db.session.add(booking)
         db.session.commit()
         return render_template('confirm.html', category='Encomienda', total=total, details={
             'Ruta': 'Río Cuarto → Córdoba' if route=='RC-CBA' else 'Córdoba → Río Cuarto',
             'Fecha': on_date.isoformat(),
-            'Bultos (máx 2 x reserva)': parcels,
+            'Bultos (máx 2 x reserva)': parcels_n,
             'Peso por bulto': '5 kg (máx)',
+            'Dirección de retiro': pickup_address or 'No indicada',
+            'Dirección de entrega': final_address or 'No indicada'
         })
-    return render_template('parcels.html')
+    # GET: pasar fecha mínima al template
+    return render_template('parcels.html', today=date.today().isoformat())
 
 # Airport exclusive
 @app.route('/airport', methods=['GET', 'POST'])
@@ -679,8 +724,13 @@ def airport_shared():
             return redirect(url_for('shared'))
 
         ensure_day_slots(route, on_date)
-        # List availability
-        schedules = TripSchedule.query.filter_by(route=route, date=on_date).order_by(TripSchedule.time.asc()).all()
+        # List availability: si la fecha es hoy filtrar horarios pasados
+        if on_date == date.today():
+            now = now_hhmm()
+            schedules = TripSchedule.query.filter_by(route=route, date=on_date).filter(TripSchedule.time >= now).order_by(TripSchedule.time.asc()).all()
+        else:
+            schedules = TripSchedule.query.filter_by(route=route, date=on_date).order_by(TripSchedule.time.asc()).all()
+
         availability = []
         for s in schedules:
             taken = booked_seats(s.id)
@@ -690,7 +740,6 @@ def airport_shared():
 
     # GET inicial
     today = date.today() + dtime(days=1)
-
     return render_template('airport_shared.html', today=today.isoformat(), form_data={})
 
 # Admin
@@ -768,10 +817,39 @@ def admin_schedules():
         db.session.commit()
         flash('Horario guardado', 'success')
         return redirect(url_for('admin_schedules'))
-    # list upcoming (next 60 days) simple
+
     today = date.today()
-    scheds = TripSchedule.query.filter(TripSchedule.date >= today).order_by(TripSchedule.date.asc(), TripSchedule.time.asc()).all()
-    return render_template('admin_schedules.html', scheds=scheds, booked_seats=booked_seats)
+
+    # Nuevo: asegurar que existan slots para los próximos 7 días (ambas rutas)
+    for i in range(0, 7):
+        d = today + dtime(days=i)
+        ensure_day_slots('RC-CBA', d)
+        ensure_day_slots('CBA-RC', d)
+
+    # obtener hora actual en formato 'HH:MM' para comparar con TripSchedule.time
+    now = datetime.now().strftime('%H:%M')
+    # Mostrar todos los horarios de días futuros y, para el día actual, solo horarios >= hora actual
+    scheds = TripSchedule.query.filter(
+        (TripSchedule.date > today) |
+        ((TripSchedule.date == today) & (TripSchedule.time >= now))
+    ).order_by(TripSchedule.date.asc(), TripSchedule.route.asc(), TripSchedule.time.asc()).all()
+
+    # Agrupar por día y dentro de cada día por ruta (ordenado)
+    from collections import OrderedDict
+    grouped = []
+    for s in scheds:
+        if not grouped or grouped[-1]['date'] != s.date:
+            grouped.append({'date': s.date, 'routes': OrderedDict()})
+        routes = grouped[-1]['routes']
+        if s.route not in routes:
+            routes[s.route] = []
+        routes[s.route].append(s)
+
+    # convertir OrderedDict a lista de {route, schedules}
+    for g in grouped:
+        g['routes'] = [{'route': r, 'schedules': sl} for r, sl in g['routes'].items()]
+
+    return render_template('admin_schedules.html', grouped_schedules=grouped, booked_seats=booked_seats)
 
 @app.route('/admin/bookings')
 @login_required
@@ -782,6 +860,70 @@ def admin_bookings():
     exclusive = CityExclusive.query.order_by(CityExclusive.created_at.desc()).all()
     anywhere = AnywhereBooking.query.order_by(AnywhereBooking.created_at.desc()).all()
     return render_template('admin_bookings.html', shared=shared, parcels=parcels, airport=airport, exclusive=exclusive, anywhere=anywhere)
+
+@app.route('/admin/delete_booking', methods=['POST'])
+@login_required
+def admin_delete_booking():
+    btype = request.form.get('type')
+    bid = request.form.get('id')
+    if not btype or not bid:
+        flash('Parámetros inválidos', 'error')
+        return redirect(url_for('admin_bookings'))
+
+    mapping = {
+        'shared': SharedBooking,
+        'parcels': ParcelBooking,
+        'airport': AirportExclusive,
+        'exclusive': CityExclusive,
+        'anywhere': AnywhereBooking
+    }
+
+    Model = mapping.get(btype)
+    if not Model:
+        flash('Tipo de reserva inválido', 'error')
+        return redirect(url_for('admin_bookings'))
+
+    obj = Model.query.get(bid)
+    if not obj:
+        flash('Reserva no encontrada', 'error')
+        return redirect(url_for('admin_bookings'))
+
+    try:
+        db.session.delete(obj)
+        db.session.commit()
+        flash('Reserva eliminada', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al eliminar la reserva', 'error')
+
+    return redirect(url_for('admin_bookings'))
+
+@app.route('/admin/delete_schedule', methods=['POST'])
+@login_required
+def admin_delete_schedule():
+    sched_id = request.form.get('id')
+    if not sched_id:
+        flash('ID de horario inválido', 'error')
+        return redirect(url_for('admin_schedules'))
+
+    try:
+        sched = TripSchedule.query.get(int(sched_id))
+    except Exception:
+        sched = None
+
+    if not sched:
+        flash('Horario no encontrado', 'error')
+        return redirect(url_for('admin_schedules'))
+
+    try:
+        db.session.delete(sched)
+        db.session.commit()
+        flash('Horario eliminado correctamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al eliminar horario', 'error')
+
+    return redirect(url_for('admin_schedules'))
 
 # CLI init
 @app.cli.command('initdb')

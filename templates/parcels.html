@@ -9,7 +9,7 @@
       <option value="CBA-RC">Córdoba → Río Cuarto</option>
     </select>
     <label>Fecha</label>
-    <input type="date" name="date" required>
+    <input type="date" name="date" required min="{{ today }}">
     <label>Cantidad de bultos (máx 2)</label>
     <select name="parcels">
       <option>1</option><option>2</option>
@@ -21,6 +21,14 @@
     <label>Nombre y apellido</label><input name="name" required>
     <label>Teléfono</label><input name="phone" required>
     <label>Email</label><input name="email" type="email">
+
+    <!-- Nuevos campos de direcciones -->
+    <label>Dirección de retiro (donde buscamos el bulto)</label>
+    <input name="pickup_address" placeholder="Calle y número, ciudad" required>
+
+    <label>Dirección de entrega (donde se deja el bulto)</label>
+    <input name="final_address" placeholder="Calle y número, ciudad" required>
+
     <button type="submit">Confirmar</button>
   </form>
 </div>

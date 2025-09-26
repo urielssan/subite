@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Reservas</h1>
-<div class="">
+<div class="card">
   <h2>Viajes Compartidos</h2>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Pasajeros</th><th>Nombre</th><th>Tel</th><th>Total</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Pasajeros</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in shared %}
       <tr>
@@ -15,51 +15,98 @@
         <td>{{ b.name }}</td>
         <td>{{ b.phone }}</td>
         <td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
+            <input type="hidden" name="type" value="shared">
+            <input type="hidden" name="id" value="{{ b.id }}">
+            <button type="submit" class="btn delete">Eliminar</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-<div class="">
+<hr>
+<div class="card">
   <h2>Encomiendas</h2>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Ruta</th><th>Bultos</th><th>Nombre</th><th>Tel</th><th>Total</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Ruta</th><th>Bultos</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in parcels %}
-      <tr><td>{{ b.date }}</td><td>{{ b.route }}</td><td>{{ b.parcels }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td></tr>
+      <tr>
+        <td>{{ b.date }}</td><td>{{ b.route }}</td><td>{{ b.parcels }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
+            <input type="hidden" name="type" value="parcels">
+            <input type="hidden" name="id" value="{{ b.id }}">
+            <button type="submit" class="btn delete">Eliminar</button>
+          </form>
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+<hr>
 <div class="card">
   <h2>Aeropuerto</h2>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Tel</th><th>Total</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in airport %}
-      <tr><td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td></tr>
+      <tr>
+        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
+            <input type="hidden" name="type" value="airport">
+            <input type="hidden" name="id" value="{{ b.id }}">
+            <button type="submit" class="btn delete">Eliminar</button>
+          </form>
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+<hr>
 <div class="card">
   <h2>Exclusivo RC↔CBA</h2>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Nombre</th><th>Tel</th><th>Total</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in exclusive %}
-      <tr><td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.route }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td></tr>
+      <tr>
+        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.route }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
+            <input type="hidden" name="type" value="exclusive">
+            <input type="hidden" name="id" value="{{ b.id }}">
+            <button type="submit" class="btn delete">Eliminar</button>
+          </form>
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+<hr>
 <div class="card">
   <h2>Cualquier destino</h2>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Origen</th><th>Destino</th><th>KM</th><th>Nombre</th><th>Tel</th><th>Total</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Origen</th><th>Destino</th><th>KM</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in anywhere %}
-      <tr><td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.origin }}</td><td>{{ b.destination }}</td><td>{{ b.km_estimate }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td></tr>
+      <tr>
+        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.origin_city }}</td><td>{{ b.destination_city }}</td><td>{{ b.km_estimate }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
+            <input type="hidden" name="type" value="anywhere">
+            <input type="hidden" name="id" value="{{ b.id }}">
+            <button type="submit" class="btn delete">Eliminar</button>
+          </form>
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
