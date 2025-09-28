@@ -11,8 +11,28 @@
     </div>
   {% endfor %}
 </div>
-  <h2>Total: ${{ '%.0f'|format(total) }}</h2>
-  <p>Te vamos a escribir para chequear todo. ¡Gracias por elegir Subite!</p>
-  <a href="{{ url_for('index') }}"><button>Volver al inicio</button></a>
+  <h1>Total: ${{ '%.0f'|format(total) }}</h2>
+
+  {# Construir mensaje para WhatsApp manteniendo el contenido mostrado #}
+  {% set _lines = [] %}
+  {% for k,v in details.items() %}
+    {% set _ = _lines.append(k ~ ': ' ~ v) %}
+  {% endfor %}
+  {% set _message = ('Confirmación - ' ~ (category or 'Reserva') ~ '\n' ~ (_lines|join('\n')) ~ '\nTotal: $' ~ ('%.0f'|format(total))) %}
+
+  <div class="button-wrapper" style="margin-top:18px; justify-content:center;">
+    <!-- Botón WhatsApp estilizado; abre chat con mensaje prearmado -->
+    <a class="btn whatsapp" href="https://wa.me/5493585130505?text={{ _message|urlencode }}" target="_blank" rel="noopener noreferrer" aria-label="Continuar por WhatsApp">
+      Confirmar por WhatsApp
+    </a>
+
+    <!-- Volver al inicio -->
+    <a href="{{ url_for('index') }}"><button class="btn outline">Volver al inicio</button></a>
+  </div>
+
 </div>
+
+<script>
+
+</script>
 {% endblock %}

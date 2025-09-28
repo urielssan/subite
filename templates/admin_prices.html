@@ -2,8 +2,21 @@
 {% block content %}
 <h1>Administrador de Precios</h1>
 <form method="post" class="card card-50">
+  {# Mapa de etiquetas en español para cada clave de precio #}
+  {% set labels = {
+    'BASE_SHARED_RC_CBA':'Base Viaje Compartido RC→CBA',
+    'BASE_SHARED_CBA_RC':'Base Viaje Compartido CBA→RC',
+    'BASE_SHARED_AIRPORT':'Base Viaje Compartido (Aeropuerto)',
+    'AIRPORT_EXCLUSIVE':'Exclusivo Aeropuerto',
+    'CITY_EXCLUSIVE_RC_CBA':'Exclusivo Ciudad RC→CBA',
+    'CITY_EXCLUSIVE_CBA_RC':'Exclusivo Ciudad CBA→RC',
+    'KM_PRICE':'Precio por KM',
+    'EXTRA_LUGGAGE':'Valija extra',
+    'PET':'Mascota'
+  } %}
+
   {% for k,v in items %}
-    <label>{{ k }}</label>
+    <label>{{ labels.get(k, k) }}</label>
     <input name="price_{{k}}" type="number" step="0.01" value="{{ v }}">
   {% endfor %}
   <button type="submit">Guardar</button>

@@ -2,9 +2,9 @@
 {% block content %}
 <h1>Reservas</h1>
 <div class="card">
-  <h2>Viajes Compartidos</h2>
+  <h1>Viajes Compartidos</h1>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Pasajeros</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Pasajeros</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Llegada</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in shared %}
       <tr>
@@ -14,6 +14,8 @@
         <td>{{ b.passengers }}</td>
         <td>{{ b.name }}</td>
         <td>{{ b.phone }}</td>
+        <td>{{ b.pickup_address if b.pickup_address else '—' }}</td>
+        <td>{{ b.final_address if b.final_address else '—' }}</td>
         <td>${{ '%.0f'|format(b.total_price) }}</td>
         <td>
           <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
@@ -29,13 +31,13 @@
 </div>
 <hr>
 <div class="card">
-  <h2>Encomiendas</h2>
+  <h1>Encomiendas</h1>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Ruta</th><th>Bultos</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Ruta</th><th>Bultos</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Entrega</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in parcels %}
       <tr>
-        <td>{{ b.date }}</td><td>{{ b.route }}</td><td>{{ b.parcels }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>{{ b.date }}</td><td>{{ b.route }}</td><td>{{ b.parcels }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>{{ b.pickup_address if b.pickup_address else '—' }}</td><td>{{ b.final_address if b.final_address else '—' }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
         <td>
           <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
             <input type="hidden" name="type" value="parcels">
@@ -50,13 +52,13 @@
 </div>
 <hr>
 <div class="card">
-  <h2>Aeropuerto</h2>
+  <h1>Aeropuerto</h1>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Llegada</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in airport %}
       <tr>
-        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>{{ b.pickup_address if b.pickup_address else '—' }}</td><td>{{ b.final_address if b.final_address else '—' }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
         <td>
           <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
             <input type="hidden" name="type" value="airport">
@@ -71,13 +73,13 @@
 </div>
 <hr>
 <div class="card">
-  <h2>Exclusivo RC↔CBA</h2>
+  <h1>Exclusivo RC↔CBA</h1>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Llegada</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in exclusive %}
       <tr>
-        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.route }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.route }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>{{ b.pickup_address if b.pickup_address else '—' }}</td><td>{{ b.final_address if b.final_address else '—' }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
         <td>
           <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
             <input type="hidden" name="type" value="exclusive">
@@ -92,13 +94,13 @@
 </div>
 <hr>
 <div class="card">
-  <h2>Cualquier destino</h2>
+  <h1>Cualquier destino</h1>
   <table class="table">
-    <thead><tr><th>Fecha</th><th>Hora</th><th>Origen</th><th>Destino</th><th>KM</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Origen</th><th>Destino</th><th>KM</th><th>Retiro</th><th>Entrega</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
       {% for b in anywhere %}
       <tr>
-        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.origin_city }}</td><td>{{ b.destination_city }}</td><td>{{ b.km_estimate }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
+        <td>{{ b.date }}</td><td>{{ b.time }}</td><td>{{ b.origin_city }}</td><td>{{ b.destination_city }}</td><td>{{ b.km_estimate }}</td><td>{{ b.origin_street if b.origin_street else '—' }}</td><td>{{ b.destination_street if b.destination_street else '—' }}</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>${{ '%.0f'|format(b.total_price) }}</td>
         <td>
           <form method="post" action="{{ url_for('admin_delete_booking') }}" onsubmit="return confirm('Eliminar reserva?');" style="display:inline;">
             <input type="hidden" name="type" value="anywhere">

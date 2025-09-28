@@ -12,7 +12,7 @@
         <td>{% if ok %}<span class="badge">Disponible</span>{% else %}<span class="badge">Agotado</span>{% endif %}</td>
         <td>
           {% if ok %}
-            <a href="{{ url_for('airport_book', schedule_id=s.id) }}?p={{ passengers }}"><button>Reservar</button></a>
+            <a href="{{ url_for('airport_book', schedule_id=s.id) }}?p={{ passengers }}"><button class="btn-reservar">Reservar</button></a>
           {% else %}
             <button class="secondary" disabled>Sin cupo</button>
           {% endif %}

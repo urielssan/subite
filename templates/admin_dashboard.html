@@ -10,21 +10,24 @@
   <div class="item"><h3>Horarios</h3><div style="font-size:28px">{{ counts.schedules }}</div></div>
 </div>
 <div class="grid">
-  <div class="card card-50">
-    <h2>Precios</h2>
-    <a href="{{ url_for('admin_prices') }}"><button>Editar precios</button></a>
-  </div>
-  <div class="card card-50">
-    <h2>Horarios</h2>
-    <a href="{{ url_for('admin_schedules') }}"><button>Gestionar horarios</button></a>
-  </div>
-  <div class="card card-50">
-    <h2>Reservas</h2>
-    <a href="{{ url_for('admin_bookings') }}"><button>Ver reservas</button></a>
-  </div>
-  <div class="card card-50">
-    <h2>Salir</h2>
-    <a href="{{ url_for('admin_logout') }}"><button class="secondary">Logout</button></a>
-  </div>
+  <div class="card card-10">
+    <h1>Precios</h1>
+    <a href="{{ url_for('admin_prices') }}"><button>Editar <br> precios</button></a>
+    <br>
+ 
+    <h1>Horarios</h1>
+    <a href="{{ url_for('admin_schedules') }}"><button>Administrar <br> horarios</button></a>
+
+    <br>
+    <h1>Reservas</h1>
+    <a href="{{ url_for('admin_bookings') }}"><button>Ver  <br>reservas</button></a>
+
+    <br>
+    </div>
+<div class="card card-10">
+    <a href="{{ url_for('admin_logout') }}"><button>Salir</button></a>
+</div>
+
+  
 </div>
 {% endblock %}
