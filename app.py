@@ -23,7 +23,18 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'subite2025')
 PICKUP_API_URL = os.getenv('PICKUP_API_URL')  # Optional, fallback to demo
 KM_API_URL = os.getenv('KM_API_URL')  # Optional, fallback to demo
 
-DEFAULT_SLOTS = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
+# Horarios por ruta (entre semana)
+SLOTS_WEEKDAY = {
+    'RC-CBA': ["06:00", "10:30", "12:00", "15:00", "18:30"],  # Salidas desde Río Cuarto → Córdoba
+    'CBA-RC': ["07:30", "10:00", "15:30", "19:00", "22:00"]   # Salidas desde Córdoba → Río Cuarto
+}
+
+# Horarios reducidos para domingos
+SLOTS_SUNDAY = {
+    'RC-CBA': ["08:00", "14:00", "17:00", "19:00"],
+    'CBA-RC': ["11:00", "17:30", "20:30", "22:30"]
+}
+
 CAPACITY_PER_TRIP = 4
 
 DESTINOS_RIO_CUARTO = [
@@ -165,8 +176,16 @@ def price(key, default=0.0):
     return pc.value if pc else default
 
 def ensure_day_slots(route, on_date):
-    # Create slots for a route/date if missing
-    for hhmm in DEFAULT_SLOTS:
+    """Crear los horarios esperados para una ruta y fecha según tu esquema.
+       Usa lista de domingos reducida si on_date es domingo (weekday()==6).
+    """
+    # elegir slots según día
+    if on_date.weekday() == 6:  # domingo
+        slots = SLOTS_SUNDAY.get(route, [])
+    else:
+        slots = SLOTS_WEEKDAY.get(route, [])
+
+    for hhmm in slots:
         exists = TripSchedule.query.filter_by(route=route, date=on_date, time=hhmm).first()
         if not exists:
             db.session.add(TripSchedule(route=route, date=on_date, time=hhmm, capacity=CAPACITY_PER_TRIP))
@@ -799,42 +818,52 @@ def admin_prices():
 @app.route('/admin/schedules', methods=['GET', 'POST'])
 @login_required
 def admin_schedules():
+    today = date.today()
+
     if request.method == 'POST':
+        # Operación por día: agregar o actualizar un horario para una fecha concreta
         route = request.form.get('route')
         date_str = request.form.get('date')
         time_str = request.form.get('time')
-        cap = int(request.form.get('capacity', CAPACITY_PER_TRIP))
+        try:
+            cap = int(request.form.get('capacity', CAPACITY_PER_TRIP))
+        except Exception:
+            cap = CAPACITY_PER_TRIP
+
+        if not (route and date_str and time_str):
+            flash('Ruta, fecha y hora son obligatorias.', 'error')
+            return redirect(url_for('admin_schedules'))
+
         try:
             on_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except Exception:
-            flash('Fecha inválida', 'error')
+            flash('Fecha inválida.', 'error')
             return redirect(url_for('admin_schedules'))
+
         exists = TripSchedule.query.filter_by(route=route, date=on_date, time=time_str).first()
         if exists:
             exists.capacity = cap
+            flash('Horario actualizado.', 'success')
         else:
             db.session.add(TripSchedule(route=route, date=on_date, time=time_str, capacity=cap))
+            flash('Horario agregado para la fecha indicada.', 'success')
         db.session.commit()
-        flash('Horario guardado', 'success')
         return redirect(url_for('admin_schedules'))
 
-    today = date.today()
+    # asegurar que existan slots base para próximos 7 días (comportamiento anterior)
+    if not request.args.get('no_ensure'):
+        for i in range(0, 7):
+            d = today + dtime(days=i)
+            ensure_day_slots('RC-CBA', d)
+            ensure_day_slots('CBA-RC', d)
 
-    # Nuevo: asegurar que existan slots para los próximos 7 días (ambas rutas)
-    for i in range(0, 7):
-        d = today + dtime(days=i)
-        ensure_day_slots('RC-CBA', d)
-        ensure_day_slots('CBA-RC', d)
-
-    # obtener hora actual en formato 'HH:MM' para comparar con TripSchedule.time
+    # mostrar solo horarios futuros y, para hoy, solo horarios >= hora actual
     now = datetime.now().strftime('%H:%M')
-    # Mostrar todos los horarios de días futuros y, para el día actual, solo horarios >= hora actual
     scheds = TripSchedule.query.filter(
-        (TripSchedule.date > today) |
-        ((TripSchedule.date == today) & (TripSchedule.time >= now))
+        (TripSchedule.date > today) | ((TripSchedule.date == today) & (TripSchedule.time >= now))
     ).order_by(TripSchedule.date.asc(), TripSchedule.route.asc(), TripSchedule.time.asc()).all()
 
-    # Agrupar por día y dentro de cada día por ruta (ordenado)
+    # Agrupar por día y por ruta
     from collections import OrderedDict
     grouped = []
     for s in scheds:
@@ -844,8 +873,6 @@ def admin_schedules():
         if s.route not in routes:
             routes[s.route] = []
         routes[s.route].append(s)
-
-    # convertir OrderedDict a lista de {route, schedules}
     for g in grouped:
         g['routes'] = [{'route': r, 'schedules': sl} for r, sl in g['routes'].items()]
 
