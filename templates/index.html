@@ -1,27 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
-  <div class="grid">
+  <div class="grid-index-top">
 
     <!-- Viajes Compartidos -->
-    <div class="card">
+    <div class="card-index-top">
       <div class="wrapper">
-        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/620335/pexels-photo-620335.jpeg?cs=srgb&dl=pexels-pripicart-620335.jpg&fm=jpg');"></div>
-        <h2>Viajes Compartidos</h2>
-        <p>Elegí fecha, ruta y cantidad de pasajeros. Mostramos horarios con cupo (4 por auto).</p>
-      </div>
-      <div class="button-wrapper">
-        <a href="{{ url_for('shared') }}"><button>AGENDAR</button></a>
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/620335/pexels-photo-620335.jpeg?cs=srgb&dl=pexels-pripicart-620335.jpg&fm=jpg');">
+
+        </div>
+        <h2>¿Querés hacer un <br> viaje compartido?</h2>
+        <p>Elegí fecha, la ruta y la cantidad de pasajeros</p>
       </div>
     </div>
+    <div class="card">
+  <form method="post">
+    <label>Ruta</label>
+    <select name="route" required>
+      <option value="RC-CBA">Río Cuarto → Córdoba</option>
+      <option value="CBA-RC">Córdoba → Río Cuarto</option>
+    </select>
+    <label>Fecha ida</label>
+    <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
+    <label>Pasajeros</label>
+    <select name="passengers">
+      <option>1</option><option>2</option><option>3</option><option>4</option>
+    </select>
+    <button type="submit">Ver horarios disponibles</button>
+  </form>
+</div>
+</div>
 
 
 
-
-
-
-
-
+<div>
     <!-- Encomiendas -->
     <div class="card">
       <div class="wrapper">

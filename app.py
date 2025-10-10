@@ -222,7 +222,7 @@ def now_hhmm():
 # --- Routes ---
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', today=date.today().isoformat(), form_data={})
 
 # Shared rides flow
 @app.route('/shared', methods=['GET', 'POST'])
