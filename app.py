@@ -878,34 +878,40 @@ def admin_schedules():
 
     return render_template('admin_schedules.html', grouped_schedules=grouped, booked_seats=booked_seats)
 
+
 @app.route('/admin/bookings')
 @login_required
 def admin_bookings():
-    filter_by = request.args.get('filter', 'all')
+    # 1. Leemos ambos parámetros de la URL. Si no existen, usamos 'all'.
+    filter_by_date = request.args.get('filter', 'all')
+    filter_by_route = request.args.get('route', 'all')
 
-    # --- Lógica para Viajes Compartidos ---
-    query = SharedBooking.query
-    today = date.today()
-
-    if filter_by == 'day':
-        # Unimos SharedBooking con TripSchedule y filtramos por la fecha de hoy
-        query = query.join(TripSchedule, SharedBooking.schedule).filter(TripSchedule.date == today)
+    # 2. Iniciamos la consulta base uniendo las tablas necesarias
+    query = SharedBooking.query.join(TripSchedule, SharedBooking.schedule)
     
-    elif filter_by == 'week':
+    # 3. Aplicamos el filtro de FECHA si es necesario
+    today = date.today()
+    if filter_by_date == 'day':
+        query = query.filter(TripSchedule.date == today)
+    elif filter_by_date == 'week':
         start_of_week = today - dtime(days=today.weekday())
         end_of_week = start_of_week + dtime(days=6)
-        # Unimos SharedBooking con TripSchedule y filtramos por el rango de la semana
-        query = query.join(TripSchedule, SharedBooking.schedule).filter(TripSchedule.date.between(start_of_week, end_of_week))
+        query = query.filter(TripSchedule.date.between(start_of_week, end_of_week))
 
-    # Ordenamos por fecha de creación (los más nuevos primero)
+    # 4. Aplicamos el filtro de RUTA si es necesario
+    if filter_by_route in ['RC-CBA', 'CBA-RC']:
+        query = query.filter(TripSchedule.route == filter_by_route)
+
+    # 5. Finalmente, ordenamos y ejecutamos la consulta
     shared = query.order_by(SharedBooking.created_at.desc()).all()
     
-    # --- Lógica para las otras reservas (sin cambios por ahora, se pueden ordenar de la misma forma) ---
+    # Las otras reservas no cambian por ahora
     parcels = ParcelBooking.query.order_by(ParcelBooking.created_at.desc()).all()
     airport = AirportExclusive.query.order_by(AirportExclusive.created_at.desc()).all()
     exclusive = CityExclusive.query.order_by(CityExclusive.created_at.desc()).all()
     anywhere = AnywhereBooking.query.order_by(AnywhereBooking.created_at.desc()).all()
     
+    # 6. Pasamos AMBOS filtros activos al template
     return render_template(
         'admin_bookings.html', 
         shared=shared, 
@@ -913,7 +919,8 @@ def admin_bookings():
         airport=airport, 
         exclusive=exclusive, 
         anywhere=anywhere,
-        current_filter=filter_by
+        current_date_filter=filter_by_date,
+        current_route_filter=filter_by_route
     )
 
 @app.route('/admin/delete_booking', methods=['POST'])

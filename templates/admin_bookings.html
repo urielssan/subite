@@ -4,10 +4,18 @@
 <div class="card">
   <h1>Viajes Compartidos</h1>
 
-  <div class="filters">
-    <a href="{{ url_for('admin_bookings', filter='day') }}" class="btn {{ 'active' if current_filter == 'day' }}">Día</a>
-    <a href="{{ url_for('admin_bookings', filter='week') }}" class="btn {{ 'active' if current_filter == 'week' }}">Semana</a>
-    <a href="{{ url_for('admin_bookings', filter='all') }}" class="btn {{ 'active' if current_filter == 'all' }}">Histórico</a>
+    <div class="filters-container">
+    <div class="filter-group">
+      <a href="{{ url_for('admin_bookings', filter='day', route=current_route_filter) }}" class="btn {{ 'active' if current_date_filter == 'day' }}">Día</a>
+      <a href="{{ url_for('admin_bookings', filter='week', route=current_route_filter) }}" class="btn {{ 'active' if current_date_filter == 'week' }}">Semana</a>
+      <a href="{{ url_for('admin_bookings', filter='all', route=current_route_filter) }}" class="btn {{ 'active' if current_date_filter == 'all' }}">Histórico</a>
+    </div>
+
+    <div class="filter-group">
+      <a href="{{ url_for('admin_bookings', route='RC-CBA', filter=current_date_filter) }}" class="btn {{ 'active' if current_route_filter == 'RC-CBA' }}">RC → CBA</a>
+      <a href="{{ url_for('admin_bookings', route='CBA-RC', filter=current_date_filter) }}" class="btn {{ 'active' if current_route_filter == 'CBA-RC' }}">CBA → RC</a>
+      <a href="{{ url_for('admin_bookings', route='all', filter=current_date_filter) }}" class="btn {{ 'active' if current_route_filter == 'all' }}">Ambas Rutas</a>
+    </div>
   </div>
 
   <table class="table">
