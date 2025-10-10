@@ -3,6 +3,13 @@
 <h1>Reservas</h1>
 <div class="card">
   <h1>Viajes Compartidos</h1>
+
+  <div class="filters">
+    <a href="{{ url_for('admin_bookings', filter='day') }}" class="btn {{ 'active' if current_filter == 'day' }}">Día</a>
+    <a href="{{ url_for('admin_bookings', filter='week') }}" class="btn {{ 'active' if current_filter == 'week' }}">Semana</a>
+    <a href="{{ url_for('admin_bookings', filter='all') }}" class="btn {{ 'active' if current_filter == 'all' }}">Histórico</a>
+  </div>
+
   <table class="table">
     <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Pasajeros</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Llegada</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>

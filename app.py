@@ -881,12 +881,40 @@ def admin_schedules():
 @app.route('/admin/bookings')
 @login_required
 def admin_bookings():
-    shared = SharedBooking.query.order_by(SharedBooking.created_at.desc()).all()
+    filter_by = request.args.get('filter', 'all')
+
+    # --- Lógica para Viajes Compartidos ---
+    query = SharedBooking.query
+    today = date.today()
+
+    if filter_by == 'day':
+        # Unimos SharedBooking con TripSchedule y filtramos por la fecha de hoy
+        query = query.join(TripSchedule, SharedBooking.schedule).filter(TripSchedule.date == today)
+    
+    elif filter_by == 'week':
+        start_of_week = today - dtime(days=today.weekday())
+        end_of_week = start_of_week + dtime(days=6)
+        # Unimos SharedBooking con TripSchedule y filtramos por el rango de la semana
+        query = query.join(TripSchedule, SharedBooking.schedule).filter(TripSchedule.date.between(start_of_week, end_of_week))
+
+    # Ordenamos por fecha de creación (los más nuevos primero)
+    shared = query.order_by(SharedBooking.created_at.desc()).all()
+    
+    # --- Lógica para las otras reservas (sin cambios) ---
     parcels = ParcelBooking.query.order_by(ParcelBooking.created_at.desc()).all()
     airport = AirportExclusive.query.order_by(AirportExclusive.created_at.desc()).all()
     exclusive = CityExclusive.query.order_by(CityExclusive.created_at.desc()).all()
     anywhere = AnywhereBooking.query.order_by(AnywhereBooking.created_at.desc()).all()
-    return render_template('admin_bookings.html', shared=shared, parcels=parcels, airport=airport, exclusive=exclusive, anywhere=anywhere)
+    
+    return render_template(
+        'admin_bookings.html', 
+        shared=shared, 
+        parcels=parcels, 
+        airport=airport, 
+        exclusive=exclusive, 
+        anywhere=anywhere,
+        current_filter=filter_by
+    )
 
 @app.route('/admin/delete_booking', methods=['POST'])
 @login_required
