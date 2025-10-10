@@ -900,7 +900,7 @@ def admin_bookings():
     # Ordenamos por fecha de creación (los más nuevos primero)
     shared = query.order_by(SharedBooking.created_at.desc()).all()
     
-    # --- Lógica para las otras reservas (sin cambios) ---
+    # --- Lógica para las otras reservas (sin cambios por ahora, se pueden ordenar de la misma forma) ---
     parcels = ParcelBooking.query.order_by(ParcelBooking.created_at.desc()).all()
     airport = AirportExclusive.query.order_by(AirportExclusive.created_at.desc()).all()
     exclusive = CityExclusive.query.order_by(CityExclusive.created_at.desc()).all()
