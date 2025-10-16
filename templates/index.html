@@ -7,93 +7,242 @@
     <div class="card-index-top">
       <div class="wrapper">
         <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/620335/pexels-photo-620335.jpeg?cs=srgb&dl=pexels-pripicart-620335.jpg&fm=jpg');">
-
         </div>
         <h2>¿Querés hacer un <br> viaje compartido?</h2>
         <p>Elegí fecha, la ruta y la cantidad de pasajeros</p>
       </div>
     </div>
     <div class="card">
-  <form method="post">
-    <label>Ruta</label>
-    <select name="route" required>
-      <option value="RC-CBA">Río Cuarto → Córdoba</option>
-      <option value="CBA-RC">Córdoba → Río Cuarto</option>
-    </select>
-    <label>Fecha ida</label>
-    <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
-    <label>Pasajeros</label>
-    <select name="passengers">
-      <option>1</option><option>2</option><option>3</option><option>4</option>
-    </select>
-    <button type="submit">Ver horarios disponibles</button>
-  </form>
-</div>
-</div>
-
-
-
-<div>
-    <!-- Encomiendas -->
-    <div class="card">
-      <div class="wrapper">
-        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/6169176/pexels-photo-6169176.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-6169176.jpg&fm=jpg');"></div>
-        <h2>Encomiendas</h2>
-        <p>Hasta 2 bultos de 5kg por reserva. Misma logística que los compartidos.</p>
-      </div>
-      <div class="button-wrapper">
-        <a href="{{ url_for('parcels') }}"><button>ENVIAR</button></a>
-      </div>
+      <form method="post" action="{{ url_for('shared') }}">
+        <label>Ruta</label>
+        <select name="route" required>
+          <option value="RC-CBA">Río Cuarto → Córdoba</option>
+          <option value="CBA-RC">Córdoba → Río Cuarto</option>
+        </select>
+        <label>Fecha ida</label>
+        <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
+        <label>Pasajeros</label>
+        <select name="passengers">
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+        </select>
+        <button type="submit">Ver horarios disponibles</button>
+      </form>
     </div>
-
-    <!-- Aeropuerto (compartido) -->
-    <div class="card">
-      <div class="wrapper">
-        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/33967565/pexels-photo-33967565.jpeg?cs=srgb&dl=pexels-wellington-franzao-295720526-33967565.jpg&fm=jpg');"></div>
-        <h2>Aeropuerto</h2>
-        <p>Traslado compartido al Aeropuerto de Córdoba. Mostramos horarios disponibles y cupos por vehículo.</p>
-      </div>
-      <div class="button-wrapper">
-        <a href="{{ url_for('airport_shared') }}"><button>RESERVAR</button></a>
-      </div>
-    </div>
-
-    <!-- Aeropuerto Exclusivo -->
-    <div class="card">
-      <div class="wrapper">
-        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/8425035/pexels-photo-8425035.jpeg?cs=srgb&dl=pexels-pavel-danilyuk-8425035.jpg&fm=jpg');"></div>
-        <h2>Aeropuerto Exclusivo</h2>
-        <p>Auto a disposición, retiro por domicilio y traslado al aeropuerto.</p>
-      </div>
-      <div class="button-wrapper">
-        <a href="{{ url_for('airport') }}"><button>RESERVAR</button></a>
-      </div>
-    </div>
-
-    <!-- Exclusivo RC ↔ CBA -->
-    <div class="card">
-      <div class="wrapper">
-        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/31824698/pexels-photo-31824698.jpeg?cs=srgb&dl=pexels-tomas-asurmendi-774865545-31824698.jpg&fm=jpg');"></div>
-        <h2>Exclusivo RC ↔ CBA</h2>
-        <p>Traslado puerta a puerta con precio fijo.</p>
-      </div>
-      <div class="button-wrapper">
-        <a href="{{ url_for('exclusive') }}"><button>RESERVAR</button></a>
-      </div>
-    </div>
-
-    <!-- A cualquier destino -->
-    <div class="card">
-      <div class="wrapper">
-        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/5025655/pexels-photo-5025655.jpeg?cs=srgb&dl=pexels-artempodrez-5025655.jpg&fm=jpg');"></div>
-        <h2>A cualquier destino</h2>
-        <p>Calculamos precio por km (demo o API).</p>
-      </div>
-      <div class="button-wrapper">
-        <a href="{{ url_for('anywhere') }}"><button>COTIZAR</button></a>
-      </div>
-    </div>
-
   </div>
+<hr style="width: 100%;background: white; margin-top: 50px;">
+  <h2 id="nuestros-servicios">Nuestros Servicios</h2>
+  <!-- Carousel de servicios -->
+  <div class="carousel-container">
+    <div class="carousel-wrapper">
+      <div class="carousel-track" id="carouselTrack">
+        
+        <!-- Encomiendas -->
+        <div class="carousel-slide">
+          <div class="slide-image" style="background-image:url('https://images.pexels.com/photos/6169176/pexels-photo-6169176.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-6169176.jpg&fm=jpg');"></div>
+          <div class="slide-content">
+            <h3>Encomiendas</h3>
+            <p>Hasta 2 bultos de 5kg por reserva</p>
+            <a href="{{ url_for('parcels') }}" class="slide-btn">ENVIAR</a>
+          </div>
+        </div>
+
+        <!-- Aeropuerto compartido -->
+        <div class="carousel-slide">
+          <div class="slide-image" style="background-image:url('https://images.pexels.com/photos/33967565/pexels-photo-33967565.jpeg?cs=srgb&dl=pexels-wellington-franzao-295720526-33967565.jpg&fm=jpg');"></div>
+          <div class="slide-content">
+            <h3>Aeropuerto</h3>
+            <p>Traslado compartido al Aeropuerto de Córdoba</p>
+            <a href="{{ url_for('airport_shared') }}" class="slide-btn">RESERVAR</a>
+          </div>
+        </div>
+
+        <!-- Aeropuerto exclusivo -->
+        <div class="carousel-slide">
+          <div class="slide-image" style="background-image:url('https://images.pexels.com/photos/723240/pexels-photo-723240.jpeg?cs=srgb&dl=pexels-tomfisk-723240.jpg&fm=jpg');"></div>
+          <div class="slide-content">
+            <h3>Aeropuerto Exclusivo</h3>
+            <p>Auto a disposición, retiro por domicilio</p>
+            <a href="{{ url_for('airport') }}" class="slide-btn">RESERVAR</a>
+          </div>
+        </div>
+
+        <!-- Exclusivo RC ↔ CBA -->
+        <div class="carousel-slide">
+          <div class="slide-image" style="background-image:url('https://images.pexels.com/photos/31824698/pexels-photo-31824698.jpeg?cs=srgb&dl=pexels-tomas-asurmendi-774865545-31824698.jpg&fm=jpg');"></div>
+          <div class="slide-content">
+            <h3>Exclusivo RC ↔ CBA</h3>
+            <p>Traslado puerta a puerta con precio fijo</p>
+            <a href="{{ url_for('exclusive') }}" class="slide-btn">RESERVAR</a>
+          </div>
+        </div>
+
+        <!-- Cualquier destino -->
+        <div class="carousel-slide">
+          <div class="slide-image" style="background-image:url('https://images.pexels.com/photos/5025655/pexels-photo-5025655.jpeg?cs=srgb&dl=pexels-artempodrez-5025655.jpg&fm=jpg');"></div>
+          <div class="slide-content">
+            <h3>A cualquier destino</h3>
+            <p>Calculamos precio por km</p>
+            <a href="{{ url_for('anywhere') }}" class="slide-btn">COTIZAR</a>
+          </div>
+        </div>
+
+        <!-- Encomiendas (duplicado para efecto loop) -->
+        <div class="carousel-slide">
+          <div class="slide-image" style="background-image:url('https://images.pexels.com/photos/6169176/pexels-photo-6169176.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-6169176.jpg&fm=jpg');"></div>
+          <div class="slide-content">
+            <h3>Encomiendas</h3>
+            <p>Hasta 2 bultos de 5kg por reserva</p>
+            <a href="{{ url_for('parcels') }}" class="slide-btn">ENVIAR</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Indicadores -->
+    <div class="carousel-dots">
+      <button class="dot active" data-slide="0"></button>
+      <button class="dot" data-slide="1"></button>
+      <button class="dot" data-slide="2"></button>
+      <button class="dot" data-slide="3"></button>
+      <button class="dot" data-slide="4"></button>
+    </div>
+
+    <!-- Flechas -->
+    <button class="carousel-arrow carousel-prev" id="prevBtn">‹</button>
+    <button class="carousel-arrow carousel-next" id="nextBtn">›</button>
+  </div>
+
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const track = document.getElementById('carouselTrack');
+  const slides = track.querySelectorAll('.carousel-slide');
+  const dots = document.querySelectorAll('.dot');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  
+  let currentSlide = 0;
+  const totalSlides = slides.length - 1; // -1 porque el último es duplicado para el loop
+
+  function getSlidesToShow() {
+    if (window.innerWidth <= 768) return 1;
+    if (window.innerWidth <= 820) return 2;
+    return 4;
+  }
+
+  function updateCarousel() {
+    const slidesToShow = getSlidesToShow();
+    const slideWidth = slides[0].offsetWidth;
+    const gap = slidesToShow === 1 ? 0 : 20;
+    
+    // Calcular offset para mostrar el 5to elemento parcialmente
+    let offset;
+    if (slidesToShow === 4) {
+      // En desktop, permitir scroll hasta mostrar el último elemento
+      const maxOffset = (totalSlides - 3.2) * (slideWidth + gap);
+      offset = Math.min(currentSlide * (slideWidth + gap), maxOffset);
+    } else {
+      offset = currentSlide * (slideWidth + gap);
+    }
+    
+    track.style.transform = `translateX(-${offset}px)`;
+    
+    // Update dots based on current view
+    if (slidesToShow === 1) {
+      // Mobile: show all dots
+      dots.forEach((dot, index) => {
+        dot.style.display = index < totalSlides ? 'block' : 'none';
+        dot.classList.toggle('active', index === currentSlide);
+      });
+    } else {
+      // Desktop/tablet: show limited dots
+      const maxSlidePosition = slidesToShow === 4 ? 2 : Math.max(0, totalSlides - slidesToShow);
+      dots.forEach((dot, index) => {
+        dot.style.display = index <= maxSlidePosition ? 'block' : 'none';
+        dot.classList.toggle('active', index === currentSlide);
+      });
+    }
+  }
+
+  function nextSlide() {
+    const slidesToShow = getSlidesToShow();
+    let maxSlide;
+    
+    if (slidesToShow === 4) {
+      maxSlide = 2; // Permitir 3 posiciones en desktop para mostrar el 5to
+    } else {
+      maxSlide = Math.max(0, totalSlides - slidesToShow);
+    }
+    
+    if (currentSlide < maxSlide) {
+      currentSlide++;
+    } else {
+      currentSlide = 0;
+    }
+    updateCarousel();
+  }
+
+  function prevSlide() {
+    const slidesToShow = getSlidesToShow();
+    let maxSlide;
+    
+    if (slidesToShow === 4) {
+      maxSlide = 2;
+    } else {
+      maxSlide = Math.max(0, totalSlides - slidesToShow);
+    }
+    
+    if (currentSlide > 0) {
+      currentSlide--;
+    } else {
+      currentSlide = maxSlide;
+    }
+    updateCarousel();
+  }
+
+  // Event listeners
+  nextBtn.addEventListener('click', nextSlide);
+  prevBtn.addEventListener('click', prevSlide);
+
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => {
+      const slidesToShow = getSlidesToShow();
+      let maxSlide;
+      
+      if (slidesToShow === 4) {
+        maxSlide = 2;
+      } else {
+        maxSlide = Math.max(0, totalSlides - slidesToShow);
+      }
+      
+      currentSlide = Math.min(index, maxSlide);
+      updateCarousel();
+    });
+  });
+
+ 
+
+  // Inicializar
+  updateCarousel();
+  
+  // Re-calculate on window resize
+  window.addEventListener('resize', () => {
+    const slidesToShow = getSlidesToShow();
+    let maxSlide;
+    
+    if (slidesToShow === 4) {
+      maxSlide = 2;
+    } else {
+      maxSlide = Math.max(0, totalSlides - slidesToShow);
+    }
+    
+    if (currentSlide > maxSlide) {
+      currentSlide = maxSlide;
+    }
+    updateCarousel();
+  });
+});
+</script>
 {% endblock %}

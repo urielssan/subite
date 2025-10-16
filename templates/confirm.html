@@ -1,17 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-60" >
-  <h1>¡Reserva recibida!</h1>
-  <p><strong>{{ category }}</strong></p>
-  <h3>Detalle</h3>
- <div class="grid grid-confirm">
-  {% for k,v in details.items() %}
-    <div class="detail">
-      <strong>{{ k }}</strong><br>{{ v }}
-    </div>
-  {% endfor %}
-</div>
-  <h1>Total: ${{ '%.0f'|format(total) }}</h2>
+<div class="card card-60">
+  <div class="receipt-header">
+    <h1> Boleta de Reserva</h1>
+    <p>{{ category }}</p>
+  </div>
+  
+  <div class="grid-confirm">
+    {% for k, v in details.items() %}
+      <div class="detail">
+        <strong>{{ k }}</strong>
+        <span>{{ v }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  
+  <div class="receipt-total">
+    <h1>Total: ${{ '%.0f'|format(total) }}</h1>
+  </div>
 
   {# Construir mensaje para WhatsApp manteniendo el contenido mostrado #}
   {% set _lines = [] %}
@@ -20,16 +26,15 @@
   {% endfor %}
   {% set _message = ('Confirmación - ' ~ (category or 'Reserva') ~ '\n' ~ (_lines|join('\n')) ~ '\nTotal: $' ~ ('%.0f'|format(total))) %}
 
-  <div class="button-wrapper" style="margin-top:18px; justify-content:center;">
+  <div class="button-wrapper" style="margin-top:24px; justify-content:center;">
     <!-- Botón WhatsApp estilizado; abre chat con mensaje prearmado -->
     <a class="btn whatsapp" href="https://wa.me/5493585130505?text={{ _message|urlencode }}" target="_blank" rel="noopener noreferrer" aria-label="Continuar por WhatsApp">
-      Confirmar por WhatsApp
+     <button>Confirmar por WhatsApp</button>
     </a>
 
     <!-- Volver al inicio -->
     <a href="{{ url_for('index') }}"><button class="btn outline">Volver al inicio</button></a>
   </div>
-
 </div>
 
 <script>

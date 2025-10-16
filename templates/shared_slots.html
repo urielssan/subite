@@ -1,42 +1,89 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-50">
-  <h2>Horarios <br> {{ 'Río Cuarto → Córdoba' if route=='RC-CBA' else 'Córdoba → Río Cuarto' }} <br> {{ on_date }}</h2>
-<table class="table">
-  <colgroup>
-    <col class="col-hora">
-    <col class="col-cupo">
-    <col class="col-estado">
-    <col class="col-cta">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>Hora</th>
-      <th>Cupos</th>
-      <th>Estado</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for s, free, ok in availability %}
-    <tr>
-      <td>{{ s.time }}</td>
-      <td>{{ free }}/{{ s.capacity }}</td>
-      <td>
-        {% if ok %}<span class="badge">Disponible</span>{% else %}<span class="badge">Agotado</span>{% endif %}
-      </td>
-      <td>
-        {% if ok %}
-          <a href="{{ url_for('shared_book', schedule_id=s.id) }}?p={{ passengers }}"><button class="btn-reservar">Reservar</button></a>
-        {% else %}
-          <button class="secondary btn-reservar" disabled>Sin cupo</button>
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="shared-slots-container">
+  <!-- Columna izquierda: Tabla de horarios -->
+  <div class="slots-table-section">
+    <div class="card card-slots">
+      <h4>Horarios | {{ 'Río Cuarto → Córdoba' if route=='RC-CBA' else 'Córdoba → Río Cuarto' }} | {{ on_date }}</h4>
+      <table class="table">
+        <colgroup>
+          <col class="col-hora">
+          <col class="col-cupo">
+          <col class="col-estado">
+          <col class="col-cta">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Cupos</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s, free, ok in availability %}
+          <tr>
+            <td>{{ s.time }}</td>
+            <td>{{ free }}/{{ s.capacity }}</td>
+            <td>
+              {% if ok %}
+                <span class="badge badge-available">Disponible</span>
+              {% else %}
+                <span class="badge badge-full">Agotado</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if ok %}
+                <a href="{{ url_for('shared_book', schedule_id=s.id) }}?p={{ passengers }}"><button class="btn-reservar">Reservar</button></a>
+              {% else %}
+                <button class="secondary btn-reservar" disabled>Sin cupo</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
 
-  <a href="{{ url_for('shared') }}"><button class="secondary">Volver</button></a>
+      <a href="{{ url_for('index') }}"><button class="secondary">Volver</button></a>
+    </div>
+  </div>
+
+  <!-- Columna derecha: Otros servicios -->
+  <div class="other-services-section">
+    <h2>Otros Servicios</h2>
+    <div class="services-grid">
+      
+      <a href="{{ url_for('parcels') }}" class="service-card">
+        <div class="service-icon">📦</div>
+        <h3>Encomiendas</h3>
+        <p>Hasta 2 bultos de 5kg</p>
+      </a>
+
+      <a href="{{ url_for('airport_shared') }}" class="service-card">
+        <div class="service-icon">✈️</div>
+        <h3>Aeropuerto</h3>
+        <p>Traslado compartido</p>
+      </a>
+
+      <a href="{{ url_for('airport') }}" class="service-card">
+        <div class="service-icon">🛬</div>
+        <h3>Aeropuerto Exclusivo</h3>
+        <p>Auto a disposición</p>
+      </a>
+
+      <a href="{{ url_for('exclusive') }}" class="service-card">
+        <div class="service-icon">🥂</div>
+        <h3>Exclusivo RC ↔ CBA</h3>
+        <p>Puerta a puerta</p>
+      </a>
+
+      <a href="{{ url_for('anywhere') }}" class="service-card">
+        <div class="service-icon">🗺️</div>
+        <h3>Cualquier destino</h3>
+        <p>Precio por km</p>
+      </a>
+
+    </div>
+  </div>
 </div>
 {% endblock %}

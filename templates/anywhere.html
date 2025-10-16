@@ -1,49 +1,63 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-50" >
-  <h1>A cualquier destino</h1>
+<div class="container">
+  <div class="grid-index-top">
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <ul class="flashes">
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
+    <!-- Información del servicio -->
+    <div class="card-index-top">
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/5025655/pexels-photo-5025655.jpeg?cs=srgb&dl=pexels-artempodrez-5025655.jpg&fm=jpg');">
+        </div>
+        <h2>A cualquier <br> destino</h2>
+        <p>Viajá donde quieras, calculamos el precio por kilómetro</p>
+      </div>
+    </div>
 
-  <form method="post">
-    <label>Fecha</label>
-    <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
+    <!-- Formulario -->
+    <div class="card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
 
-    <label>Hora</label>
-    <input type="time" name="time" required min="{{ hour }}" value="{{ form_data.get('time', hour) }}">
+      <form method="post">
+        <label>Fecha</label>
+        <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
 
-    <label>Ciudad de origen</label>
-    <input name="origin" required value="{{ form_data.get('origin', '') }}">
+        <label>Hora</label>
+        <input type="time" name="time" required min="{{ hour }}" value="{{ form_data.get('time', hour) }}">
 
-    <label>Calle de origen</label>
-    <input name="origin_street" required value="{{ form_data.get('origin_street', '') }}">
+        <label>Ciudad de origen</label>
+        <input name="origin" required value="{{ form_data.get('origin', '') }}">
 
-    <label>Ciudad de destino</label>
-    <input name="destination" required value="{{ form_data.get('destination', '') }}">
+        <label>Calle de origen</label>
+        <input name="origin_street" required value="{{ form_data.get('origin_street', '') }}">
 
-    <label>Calle de destino</label>
-    <input name="destination_street" required value="{{ form_data.get('destination_street', '') }}">
+        <label>Ciudad de destino</label>
+        <input name="destination" required value="{{ form_data.get('destination', '') }}">
 
-    <h3>Datos de contacto</h3>
-    <label>Nombre y apellido</label>
-    <input name="name" required value="{{ form_data.get('name', '') }}">
+        <label>Calle de destino</label>
+        <input name="destination_street" required value="{{ form_data.get('destination_street', '') }}">
 
-    <label>Teléfono</label>
-    <input name="phone" required value="{{ form_data.get('phone', '') }}">
+        <h3>Datos de contacto</h3>
+        <label>Nombre y apellido</label>
+        <input name="name" required value="{{ form_data.get('name', '') }}">
 
-    <label>Email</label>
-    <input name="email" type="email" value="{{ form_data.get('email', '') }}">
+        <label>Teléfono</label>
+        <input name="phone" required value="{{ form_data.get('phone', '') }}">
 
-    <button type="submit">Cotizar & Reservar</button>
-  </form>
+        <label>Email</label>
+        <input name="email" type="email" value="{{ form_data.get('email', '') }}">
+
+        <button type="submit">Cotizar & Reservar</button>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>

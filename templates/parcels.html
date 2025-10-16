@@ -1,35 +1,48 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-50" >
-  <h1>Encomiendas</h1>
-  <form method="post">
-    <label>Ruta</label>
-    <select name="route" required>
-      <option value="RC-CBA">Río Cuarto → Córdoba</option>
-      <option value="CBA-RC">Córdoba → Río Cuarto</option>
-    </select>
-    <label>Fecha</label>
-    <input type="date" name="date" required min="{{ today }}">
-    <label>Cantidad de bultos (máx 2)</label>
-    <select name="parcels">
-      <option>1</option><option>2</option>
-    </select>
-   
+<div class="container">
+  <div class="grid-index-top">
+
+    <!-- Información del servicio -->
+    <div class="card-index-top">
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/6169176/pexels-photo-6169176.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-6169176.jpg&fm=jpg');">
+        </div>
+        <h2>Enviá tus <br> encomiendas</h2>
+        <p>Hasta 2 bultos de 5kg por reserva con retiro y entrega a domicilio</p>
+      </div>
     </div>
-    <div class="card card-50" >
-    <h2>Datos de contacto</h2>
-    <label>Nombre y apellido</label><input name="name" required>
-    <label>Teléfono</label><input name="phone" required>
-    <label>Email</label><input name="email" type="email">
 
-    <!-- Nuevos campos de direcciones -->
-    <label>Dirección de retiro (donde buscamos el bulto)</label>
-    <input name="pickup_address" placeholder="Calle y número, ciudad" required>
+    <!-- Formulario -->
+    <div class="card">
+      <form method="post">
+        <label>Ruta</label>
+        <select name="route" required>
+          <option value="RC-CBA">Río Cuarto → Córdoba</option>
+          <option value="CBA-RC">Córdoba → Río Cuarto</option>
+        </select>
+        <label>Fecha</label>
+        <input type="date" name="date" required min="{{ today }}">
+        <label>Cantidad de bultos (máx 2)</label>
+        <select name="parcels">
+          <option>1</option><option>2</option>
+        </select>
+        
+        <h3>Datos de contacto</h3>
+        <label>Nombre y apellido</label><input name="name" required>
+        <label>Teléfono</label><input name="phone" required>
+        <label>Email</label><input name="email" type="email">
 
-    <label>Dirección de entrega (donde se deja el bulto)</label>
-    <input name="final_address" placeholder="Calle y número, ciudad" required>
+        <!-- Direcciones -->
+        <label>Dirección de retiro (donde buscamos el bulto)</label>
+        <input name="pickup_address" placeholder="Calle y número, ciudad" required>
 
-    <button type="submit">Confirmar</button>
-  </form>
+        <label>Dirección de entrega (donde se deja el bulto)</label>
+        <input name="final_address" placeholder="Calle y número, ciudad" required>
+
+        <button type="submit">Confirmar envío</button>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

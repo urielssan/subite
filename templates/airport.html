@@ -1,42 +1,56 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-50" >
-  <h1>Aeropuerto Exclusivo</h1>
+<div class="container">
+  <div class="grid-index-top">
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <ul class="flashes">
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
+    <!-- Información del servicio -->
+    <div class="card-index-top">
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/3729464/pexels-photo-3729464.jpeg?cs=srgb&dl=pexels-mike-bird-3729464.jpg&fm=jpg');">
+        </div>
+        <h2>Aeropuerto <br> exclusivo</h2>
+        <p>Auto a disposición con retiro por domicilio directo al aeropuerto</p>
+      </div>
+    </div>
 
-  <form method="post">
-    <label>Fecha</label>
-    <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
+    <!-- Formulario -->
+    <div class="card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
 
-    <label>Hora</label>
-    <input type="time" name="time" required min="{{ hour }}" value="{{ form_data.get('time', hour) }}">
+      <form method="post">
+        <label>Fecha</label>
+        <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
 
-    <label>Nombre y apellido</label>
-    <input name="name" required value="{{ form_data.get('name', '') }}">
+        <label>Hora</label>
+        <input type="time" name="time" required min="{{ hour }}" value="{{ form_data.get('time', hour) }}">
 
-    <label>Teléfono</label>
-    <input name="phone" required value="{{ form_data.get('phone', '') }}">
+        <label>Nombre y apellido</label>
+        <input name="name" required value="{{ form_data.get('name', '') }}">
 
-    <label>Email</label>
-    <input name="email" type="email" value="{{ form_data.get('email', '') }}">
+        <label>Teléfono</label>
+        <input name="phone" required value="{{ form_data.get('phone', '') }}">
 
-    <label>Dirección de retiro</label>
-    <input name="pickup_address" required value="{{ form_data.get('pickup_address', '') }}">
+        <label>Email</label>
+        <input name="email" type="email" value="{{ form_data.get('email', '') }}">
 
-    <label>Dirección de llegada</label>
-    <input name="final_address" required value="{{ form_data.get('final_address', '') }}">
+        <label>Dirección de retiro</label>
+        <input name="pickup_address" required value="{{ form_data.get('pickup_address', '') }}">
 
-    <button type="submit">Reservar</button>
-  </form>
+        <label>Dirección de llegada</label>
+        <input name="final_address" required value="{{ form_data.get('final_address', '') }}">
+
+        <button type="submit">Reservar traslado</button>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>

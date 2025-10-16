@@ -1,48 +1,62 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-50">
-  <h1>Exclusivo RC ↔ CBA</h1>
+<div class="container">
+  <div class="grid-index-top">
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <ul class="flashes">
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
+    <!-- Información del servicio -->
+    <div class="card-index-top">
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/31824698/pexels-photo-31824698.jpeg?cs=srgb&dl=pexels-tomas-asurmendi-774865545-31824698.jpg&fm=jpg');">
+        </div>
+        <h2>Viaje <br> exclusivo</h2>
+        <p>Traslado puerta a puerta con precio fijo entre Río Cuarto y Córdoba</p>
+      </div>
+    </div>
 
-  <form method="post">
-    <label>Ruta</label>
-    <select name="route" required>
-      <option value="RC-CBA" {% if form_data.get('route') == 'RC-CBA' %}selected{% endif %}>Río Cuarto → Córdoba</option>
-      <option value="CBA-RC" {% if form_data.get('route') == 'CBA-RC' %}selected{% endif %}>Córdoba → Río Cuarto</option>
-    </select>
+    <!-- Formulario -->
+    <div class="card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
 
-    <label>Fecha</label>
-    <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
+      <form method="post">
+        <label>Ruta</label>
+        <select name="route" required>
+          <option value="RC-CBA" {% if form_data.get('route') == 'RC-CBA' %}selected{% endif %}>Río Cuarto → Córdoba</option>
+          <option value="CBA-RC" {% if form_data.get('route') == 'CBA-RC' %}selected{% endif %}>Córdoba → Río Cuarto</option>
+        </select>
 
-    <label>Hora</label>
-    <input type="time" name="time" required min="{{ hour }}" value="{{ form_data.get('time', hour) }}">
+        <label>Fecha</label>
+        <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
 
-    <label>Nombre y apellido</label>
-    <input name="name" required value="{{ form_data.get('name', '') }}">
+        <label>Hora</label>
+        <input type="time" name="time" required min="{{ hour }}" value="{{ form_data.get('time', hour) }}">
 
-    <label>Teléfono</label>
-    <input name="phone" required value="{{ form_data.get('phone', '') }}">
+        <label>Nombre y apellido</label>
+        <input name="name" required value="{{ form_data.get('name', '') }}">
 
-    <label>Email</label>
-    <input name="email" type="email" value="{{ form_data.get('email', '') }}">
+        <label>Teléfono</label>
+        <input name="phone" required value="{{ form_data.get('phone', '') }}">
 
-    <label>Dirección de retiro</label>
-    <input name="pickup_address" required value="{{ form_data.get('pickup_address', '') }}">
+        <label>Email</label>
+        <input name="email" type="email" value="{{ form_data.get('email', '') }}">
 
-    <label>Dirección de llegada</label>
-    <input name="final_address" required value="{{ form_data.get('final_address', '') }}">
+        <label>Dirección de retiro</label>
+        <input name="pickup_address" required value="{{ form_data.get('pickup_address', '') }}">
 
-    <button type="submit">Reservar</button>
-  </form>
+        <label>Dirección de llegada</label>
+        <input name="final_address" required value="{{ form_data.get('final_address', '') }}">
+
+        <button type="submit">Reservar viaje</button>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>

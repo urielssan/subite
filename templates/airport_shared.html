@@ -1,19 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card card-50" >
-  <h1>Aeropuerto compartido</h1>
-  <form method="post">
-    <label>Ruta</label>
-    <select name="route" required readonly>
-        <option value="RC-CBA" selected readonly>Río Cuarto → Córdoba</option>
-    </select>
-    <label>Fecha ida</label>
-    <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
-    <label>Pasajeros</label>
-    <select name="passengers">
-      <option>1</option><option>2</option><option>3</option><option>4</option>
-    </select>
-    <button type="submit">Ver horarios disponibles</button>
-  </form>
+<div class="container">
+  <div class="grid-index-top">
+
+    <!-- Información del servicio -->
+    <div class="card-index-top">
+      <div class="wrapper">
+        <div class="banner-image" style="background-image:url('https://images.pexels.com/photos/33967565/pexels-photo-33967565.jpeg?cs=srgb&dl=pexels-wellington-franzao-295720526-33967565.jpg&fm=jpg');">
+        </div>
+        <h2>Aeropuerto <br> compartido</h2>
+        <p>Traslado compartido desde Río Cuarto al Aeropuerto de Córdoba</p>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card">
+      <form method="post">
+        <label>Ruta</label>
+        <select name="route" required readonly>
+            <option value="RC-CBA" selected readonly>Río Cuarto → Córdoba</option>
+        </select>
+        <label>Fecha ida</label>
+        <input type="date" name="date" required min="{{ today }}" value="{{ form_data.get('date', today) }}">
+        <label>Pasajeros</label>
+        <select name="passengers">
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+        </select>
+        <button type="submit">Ver horarios disponibles</button>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

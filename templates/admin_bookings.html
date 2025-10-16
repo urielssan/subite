@@ -1,23 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Reservas</h1>
+
+<!-- Filtros mejorados -->
 <div class="card">
-  <h1>Viajes Compartidos</h1>
+  <div class="filters-container">
+    <form method="get" class="filters-form">
+      <div class="filter-group">
+        <label for="filter">Período:</label>
+        <select name="filter" id="filter" onchange="this.form.submit()">
+          <option value="day" {{ 'selected' if current_date_filter == 'day' }}>Hoy</option>
+          <option value="week" {{ 'selected' if current_date_filter == 'week' }}>Esta semana</option>
+          <option value="all" {{ 'selected' if current_date_filter == 'all' }}>Histórico</option>
+        </select>
+      </div>
 
-    <div class="filters-container">
-    <div class="filter-group">
-      <a href="{{ url_for('admin_bookings', filter='day', route=current_route_filter) }}" class="btn {{ 'active' if current_date_filter == 'day' }}">Día</a>
-      <a href="{{ url_for('admin_bookings', filter='week', route=current_route_filter) }}" class="btn {{ 'active' if current_date_filter == 'week' }}">Semana</a>
-      <a href="{{ url_for('admin_bookings', filter='all', route=current_route_filter) }}" class="btn {{ 'active' if current_date_filter == 'all' }}">Histórico</a>
-    </div>
+      <div class="filter-group">
+        <label for="route">Ruta:</label>
+        <select name="route" id="route" onchange="this.form.submit()">
+          <option value="all" {{ 'selected' if current_route_filter == 'all' }}>Ambas rutas</option>
+          <option value="RC-CBA" {{ 'selected' if current_route_filter == 'RC-CBA' }}>RC → CBA</option>
+          <option value="CBA-RC" {{ 'selected' if current_route_filter == 'CBA-RC' }}>CBA → RC</option>
+        </select>
+      </div>
 
-    <div class="filter-group">
-      <a href="{{ url_for('admin_bookings', route='RC-CBA', filter=current_date_filter) }}" class="btn {{ 'active' if current_route_filter == 'RC-CBA' }}">RC → CBA</a>
-      <a href="{{ url_for('admin_bookings', route='CBA-RC', filter=current_date_filter) }}" class="btn {{ 'active' if current_route_filter == 'CBA-RC' }}">CBA → RC</a>
-      <a href="{{ url_for('admin_bookings', route='all', filter=current_date_filter) }}" class="btn {{ 'active' if current_route_filter == 'all' }}">Ambas Rutas</a>
-    </div>
+    </form>
   </div>
+</div>
 
+<div class="card">
+  <h2>Viajes Compartidos</h2>
   <table class="table">
     <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Pasajeros</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Llegada</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
@@ -44,9 +56,11 @@
     </tbody>
   </table>
 </div>
+
+<!-- Resto de las secciones sin cambios -->
 <hr>
 <div class="card">
-  <h1>Encomiendas</h1>
+  <h2>Encomiendas</h2>
   <table class="table">
     <thead><tr><th>Fecha</th><th>Ruta</th><th>Bultos</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Entrega</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
@@ -65,9 +79,10 @@
     </tbody>
   </table>
 </div>
+
 <hr>
 <div class="card">
-  <h1>Aeropuerto</h1>
+  <h2>Aeropuerto</h2>
   <table class="table">
     <thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Llegada</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
@@ -86,9 +101,10 @@
     </tbody>
   </table>
 </div>
+
 <hr>
 <div class="card">
-  <h1>Exclusivo RC↔CBA</h1>
+  <h2>Exclusivo RC↔CBA</h2>
   <table class="table">
     <thead><tr><th>Fecha</th><th>Hora</th><th>Ruta</th><th>Nombre</th><th>Tel</th><th>Retiro</th><th>Llegada</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
@@ -107,9 +123,10 @@
     </tbody>
   </table>
 </div>
+
 <hr>
 <div class="card">
-  <h1>Cualquier destino</h1>
+  <h2>Cualquier destino</h2>
   <table class="table">
     <thead><tr><th>Fecha</th><th>Hora</th><th>Origen</th><th>Destino</th><th>KM</th><th>Retiro</th><th>Entrega</th><th>Nombre</th><th>Tel</th><th>Total</th><th>Acción</th></tr></thead>
     <tbody>
