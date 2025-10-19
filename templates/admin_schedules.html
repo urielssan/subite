@@ -1,69 +1,236 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Horarios</h1>
-
-<div class="card card-10">
-  <h3>Agregar / Actualizar horario (por día)</h3>
-  <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-    <label style="width:140px;">Ruta</label>
-    <select name="route" required>
-      <option value="RC-CBA">Río Cuarto → Córdoba</option>
-      <option value="CBA-RC">Córdoba → Río Cuarto</option>
-    </select>
-
-    <label style="width:140px;">Fecha</label>
-    <input type="date" name="date" required>
-
-    <label style="width:140px;">Hora</label>
-    <input type="time" name="time" required style="width:160px;">
-
-    <label style="width:140px;">Cupo</label>
-    <input type="number" name="capacity" min="1" max="20" value="4" style="width:100px;">
-
-    <div style="width:100%;margin-top:6px;">
-      <button type="submit" class="btn">Guardar para la fecha</button>
-      <small style="display:block;margin-top:6px;color:var(--muted);">Esto añade o actualiza el horario solo para la fecha seleccionada.</small>
+<div class="admin-header">
+  <div class="admin-title-section">
+    <div class="admin-icon">🕒</div>
+    <div class="admin-title-content">
+      <h1 class="admin-main-title">Administrador de Horarios</h1>
+      <p class="admin-subtitle">Gestiona los horarios y capacidades del sistema de transporte</p>
     </div>
-  </form>
+  </div>
+  <div class="admin-stats">
+    <div class="stat-item">
+      <span class="stat-number">{{ grouped_schedules|length }}</span>
+      <span class="stat-label">Días Programados</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      {% set total_routes = 0 %}
+      {% for day in grouped_schedules %}
+        {% set total_routes = total_routes + day.routes|length %}
+      {% endfor %}
+      <span class="stat-number">{{ total_routes }}</span>
+      <span class="stat-label">Horarios Totales</span>
+    </div>
+  </div>
 </div>
 
-<!-- Mantener solo el formulario de eliminación individual en la tabla (eliminar por fila) -->
-<!-- Mostrar por día y por ruta dentro del día -->
-{% for day in grouped_schedules %}
-  <div class="card card-50">
-    <h2>{{ day.date.strftime('%A, %d %b %Y') }}</h2>
+<div class="schedule-container">
+  <!-- Card para agregar nuevo horario -->
+  <div class="schedule-add-card">
+    <div class="schedule-card-header">
+      <div class="schedule-card-icon">➕</div>
+      <div>
+        <h3 class="schedule-card-title">Agregar Nuevo Horario</h3>
+        <p class="schedule-card-subtitle">Configura horarios por fecha específica</p>
+      </div>
+    </div>
+    
+    <form method="post" class="schedule-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ruta</label>
+          <select name="route" required class="form-select">
+            <option value="RC-CBA">🏠 Río Cuarto → Córdoba 🏢</option>
+            <option value="CBA-RC">🏢 Córdoba → Río Cuarto 🏠</option>
+          </select>
+        </div>
 
-    {% for route_group in day.routes %}
-      <h3 style="margin-top:10px;">{{ 'RC→CBA' if route_group.route == 'RC-CBA' else 'CBA→RC' }}</h3>
-      <table class="table" style="margin-bottom:12px;">
-        <thead>
-          <tr>
-            <th>Hora</th><th>Cupo</th><th>Reservados</th><th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in route_group.schedules %}
-          <tr>
-            <td>{{ s.time }}</td>
-            <td>{{ s.capacity }}</td>
-            <td>{{ booked_seats(s.id) }}</td>
-            <td>
-              <form method="post" action="{{ url_for('admin_delete_schedule') }}" onsubmit="return confirm('¿Eliminar este horario?');" style="display:inline;">
-                <input type="hidden" name="id" value="{{ s.id }}">
-                <button type="submit" class="btn delete">Eliminar</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input type="date" name="date" required class="form-input">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Hora</label>
+          <input type="time" name="time" required class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Capacidad</label>
+          <input type="number" name="capacity" min="1" max="20" value="4" class="form-input">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-save-schedule">
+          <span class="btn-icon">💾</span>
+          Guardar Horario
+        </button>
+        <small class="form-help">Se agregará o actualizará el horario para la fecha seleccionada</small>
+      </div>
+    </form>
+  </div>
+
+  <!-- Filtros -->
+  <div class="schedule-filters">
+    <div class="filter-group">
+      <label class="filter-label">Filtrar por día:</label>
+      <select id="dayFilter" class="filter-select">
+        <option value="">Todos los días</option>
+        {% for day in grouped_schedules %}
+          <option value="{{ day.date.strftime('%Y-%m-%d') }}">{{ day.date.strftime('%A, %d %b') }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="filter-group">
+      <label class="filter-label">Filtrar por dirección:</label>
+      <select id="routeFilter" class="filter-select">
+        <option value="">Todas las rutas</option>
+        <option value="RC-CBA">🏠 RC → CBA 🏢</option>
+        <option value="CBA-RC">🏢 CBA → RC 🏠</option>
+      </select>
+    </div>
+    
+    <button id="clearFilters" class="btn-clear-filters">Limpiar Filtros</button>
+  </div>
+
+  <!-- Lista de horarios -->
+  <div class="schedules-list">
+    {% for day in grouped_schedules %}
+      <div class="day-schedule-card" data-date="{{ day.date.strftime('%Y-%m-%d') }}">
+        <div class="day-header">
+          <div class="day-info">
+            <h2 class="day-title">{{ day.date.strftime('%A, %d %b %Y') }}</h2>
+            <span class="day-routes-count">{{ day.routes|length }} ruta{{ 's' if day.routes|length != 1 else '' }}</span>
+          </div>
+          <div class="day-stats">
+            {% set total_schedules = 0 %}
+            {% for route_group in day.routes %}
+              {% set total_schedules = total_schedules + route_group.schedules|length %}
+            {% endfor %}
+            <span class="total-trips">{{ total_schedules }} viaje{{ 's' if total_schedules != 1 else '' }}</span>
+          </div>
+        </div>
+
+        {% for route_group in day.routes %}
+          <div class="route-section" data-route="{{ route_group.route }}">
+            <div class="route-header">
+              <h3 class="route-title">
+                {% if route_group.route == 'RC-CBA' %}
+                  <span class="route-icon">🏠➡️🏢</span>
+                  Río Cuarto → Córdoba
+                {% else %}
+                  <span class="route-icon">🏢➡️🏠</span>
+                  Córdoba → Río Cuarto
+                {% endif %}
+              </h3>
+              <span class="route-count">{{ route_group.schedules|length }} horario{{ 's' if route_group.schedules|length != 1 else '' }}</span>
+            </div>
+            
+            <div class="schedules-grid">
+              {% for s in route_group.schedules %}
+                <div class="schedule-item">
+                  <div class="schedule-time">
+                    <span class="time">{{ s.time }}</span>
+                  </div>
+                  <div class="schedule-info">
+                    <div class="capacity-info">
+                      <span class="capacity">{{ s.capacity }} asientos</span>
+                      <span class="booked">{{ booked_seats(s.id) }} reservados</span>
+                      {% set available = s.capacity - booked_seats(s.id) %}
+                      <span class="available {{ 'full' if available == 0 else 'available' }}">
+                        {{ available }} disponible{{ 's' if available != 1 else '' }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="schedule-actions">
+                    <form method="post" action="{{ url_for('admin_delete_schedule') }}" 
+                          onsubmit="return confirm('¿Eliminar este horario?');" 
+                          class="delete-form">
+                      <input type="hidden" name="id" value="{{ s.id }}">
+                      <button type="submit" class="btn-delete-schedule">
+                        <span class="delete-icon">🗑️</span>
+                        Eliminar
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <h3>No hay horarios programados</h3>
+        <p>Agrega el primer horario usando el formulario de arriba</p>
+      </div>
     {% endfor %}
+  </div>
+</div>
 
-  </div>
-{% else %}
-  <div class="card">
-    <p>No hay horarios próximos.</p>
-  </div>
-{% endfor %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const dayFilter = document.getElementById('dayFilter');
+  const routeFilter = document.getElementById('routeFilter');
+  const clearFilters = document.getElementById('clearFilters');
+  const dayCards = document.querySelectorAll('.day-schedule-card');
+  const routeSections = document.querySelectorAll('.route-section');
+
+  function applyFilters() {
+    const selectedDay = dayFilter.value;
+    const selectedRoute = routeFilter.value;
+
+    // Filtrar por día
+    dayCards.forEach(card => {
+      const cardDate = card.getAttribute('data-date');
+      const dayMatch = !selectedDay || cardDate === selectedDay;
+      
+      if (dayMatch) {
+        card.style.display = 'block';
+        
+        // Filtrar rutas dentro del día
+        const routesInCard = card.querySelectorAll('.route-section');
+        let visibleRoutes = 0;
+        
+        routesInCard.forEach(route => {
+          const routeType = route.getAttribute('data-route');
+          const routeMatch = !selectedRoute || routeType === selectedRoute;
+          
+          if (routeMatch) {
+            route.style.display = 'block';
+            visibleRoutes++;
+          } else {
+            route.style.display = 'none';
+          }
+        });
+        
+        // Ocultar la card del día si no hay rutas visibles
+        if (selectedRoute && visibleRoutes === 0) {
+          card.style.display = 'none';
+        }
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  function clearAllFilters() {
+    dayFilter.value = '';
+    routeFilter.value = '';
+    dayCards.forEach(card => card.style.display = 'block');
+    routeSections.forEach(section => section.style.display = 'block');
+  }
+
+  dayFilter.addEventListener('change', applyFilters);
+  routeFilter.addEventListener('change', applyFilters);
+  clearFilters.addEventListener('click', clearAllFilters);
+});
+</script>
 
 {% endblock %}

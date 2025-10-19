@@ -1,24 +1,117 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Administrador de Precios</h1>
-<form method="post" class="card card-50">
-  {# Mapa de etiquetas en español para cada clave de precio #}
-  {% set labels = {
-    'BASE_SHARED_RC_CBA':'Base Viaje Compartido RC→CBA',
-    'BASE_SHARED_CBA_RC':'Base Viaje Compartido CBA→RC',
-    'BASE_SHARED_AIRPORT':'Base Viaje Compartido (Aeropuerto)',
-    'AIRPORT_EXCLUSIVE':'Exclusivo Aeropuerto',
-    'CITY_EXCLUSIVE_RC_CBA':'Exclusivo Ciudad RC→CBA',
-    'CITY_EXCLUSIVE_CBA_RC':'Exclusivo Ciudad CBA→RC',
-    'KM_PRICE':'Precio por KM',
-    'EXTRA_LUGGAGE':'Valija extra',
-    'PET':'Mascota'
-  } %}
+<h1>💰 Administrador de Precios</h1>
 
-  {% for k,v in items %}
-    <label>{{ labels.get(k, k) }}</label>
-    <input name="price_{{k}}" type="number" step="0.01" value="{{ v }}">
-  {% endfor %}
-  <button type="submit">Guardar</button>
+{# Mapa de etiquetas en español para cada clave de precio #}
+{% set labels = {
+  'BASE_SHARED_RC_CBA':'Base Viaje Compartido RC→CBA',
+  'BASE_SHARED_CBA_RC':'Base Viaje Compartido CBA→RC',
+  'BASE_SHARED_AIRPORT':'Base Viaje Compartido (Aeropuerto)',
+  'AIRPORT_EXCLUSIVE':'Exclusivo Aeropuerto',
+  'CITY_EXCLUSIVE_RC_CBA':'Exclusivo Ciudad RC→CBA',
+  'CITY_EXCLUSIVE_CBA_RC':'Exclusivo Ciudad CBA→RC',
+  'KM_PRICE':'Precio por KM',
+  'EXTRA_LUGGAGE':'Valija extra',
+  'PET':'Mascota'
+} %}
+
+{# Organización por categorías #}
+{% set shared_keys = ['BASE_SHARED_RC_CBA', 'BASE_SHARED_CBA_RC', 'BASE_SHARED_AIRPORT'] %}
+{% set exclusive_keys = ['AIRPORT_EXCLUSIVE', 'CITY_EXCLUSIVE_RC_CBA', 'CITY_EXCLUSIVE_CBA_RC'] %}
+{% set distance_keys = ['KM_PRICE'] %}
+{% set extra_keys = ['EXTRA_LUGGAGE', 'PET'] %}
+
+<form method="post">
+  <div class="admin-price-grid">
+    
+    <!-- Viajes Compartidos -->
+    <div class="price-category-card">
+      <div class="price-category-header">
+        <h2>🚌 Viajes Compartidos</h2>
+        <p>Precios base para viajes compartidos</p>
+      </div>
+      <div class="price-inputs">
+        {% for k, v in items %}
+          {% if k in shared_keys %}
+            <div class="price-input-group">
+              <label>{{ labels.get(k, k) }}</label>
+              <div class="input-wrapper">
+                <span class="currency">$</span>
+                <input name="price_{{k}}" type="number" step="1" value="{{ v|int }}" class="price-input">
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Viajes Exclusivos -->
+    <div class="price-category-card">
+      <div class="price-category-header">
+        <h2>🚗 Viajes Exclusivos</h2>
+        <p>Precios para servicios exclusivos</p>
+      </div>
+      <div class="price-inputs">
+        {% for k, v in items %}
+          {% if k in exclusive_keys %}
+            <div class="price-input-group">
+              <label>{{ labels.get(k, k) }}</label>
+              <div class="input-wrapper">
+                <span class="currency">$</span>
+                <input name="price_{{k}}" type="number" step="1" value="{{ v|int }}" class="price-input">
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Precio por Distancia -->
+    <div class="price-category-card">
+      <div class="price-category-header">
+        <h2>📏 Precio por Distancia</h2>
+        <p>Tarifa por kilómetro recorrido</p>
+      </div>
+      <div class="price-inputs">
+        {% for k, v in items %}
+          {% if k in distance_keys %}
+            <div class="price-input-group">
+              <label>{{ labels.get(k, k) }}</label>
+              <div class="input-wrapper">
+                <span class="currency">$</span>
+                <input name="price_{{k}}" type="number" step="1" value="{{ v|int }}" class="price-input">
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Servicios Adicionales -->
+    <div class="price-category-card">
+      <div class="price-category-header">
+        <h2>🎒 Servicios Adicionales</h2>
+        <p>Cargos por servicios extra</p>
+      </div>
+      <div class="price-inputs">
+        {% for k, v in items %}
+          {% if k in extra_keys %}
+            <div class="price-input-group">
+              <label>{{ labels.get(k, k) }}</label>
+              <div class="input-wrapper">
+                <span class="currency">$</span>
+                <input name="price_{{k}}" type="number" step="0.01" value="{{ v }}" class="price-input">
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="save-section">
+    <button type="submit" class="save-prices-btn">💾 Guardar Todos los Precios</button>
+  </div>
 </form>
 {% endblock %}
