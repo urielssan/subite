@@ -27,6 +27,17 @@
 
 <div class="schedule-container">
   <!-- Card para agregar nuevo horario -->
+   {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="padding: 0 1em 1em 1em;">
+        {% for category, message in messages %}
+          <div style="padding: 1em; border-radius: 5px; margin-top: 1em; color: #fff; background: {{ '#721c24' if category == 'error' else '#155724' }};">
+            <strong>{{ 'Error:' if category == 'error' else 'Éxito:' }}</strong> {{ message }}
+          </div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
   <div class="schedule-add-card">
     <div class="schedule-card-header">
       <div class="schedule-card-icon">➕</div>
@@ -36,7 +47,8 @@
       </div>
     </div>
     
-    <form method="post" class="schedule-form">
+    <form method="post" class="schedule-form" id="addScheduleForm">
+      <input type="hidden" name="save_type" id="saveTypeInput" value="single">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Ruta</label>
@@ -65,12 +77,12 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn-save-schedule">
-          <span class="btn-icon">💾</span>
-          Guardar Horario
+        <button type="button" class="btn-save-schedule" id="showAddModalBtn">
+            <span class="btn-icon">💾</span>
+            Guardar Horario
         </button>
         <small class="form-help">Se agregará o actualizará el horario para la fecha seleccionada</small>
-      </div>
+    </div>
     </form>
   </div>
 
@@ -148,15 +160,17 @@
                     </div>
                   </div>
                   <div class="schedule-actions">
-                    <form method="post" action="{{ url_for('admin_delete_schedule') }}" 
-                          onsubmit="return confirm('¿Eliminar este horario?');" 
-                          class="delete-form">
-                      <input type="hidden" name="id" value="{{ s.id }}">
-                      <button type="submit" class="btn-delete-schedule">
-                        <span class="delete-icon">🗑️</span>
-                        Eliminar
-                      </button>
-                    </form>
+
+<form method="post" action="{{ url_for('admin_delete_schedule') }}" 
+    class="delete-form" data-schedule-info="{{ day.date.strftime('%d/%m') }} @ {{ s.time }}"
+    data-recurring-id="{{ s.recurring_template.id if s.recurring_template else '' }}"
+>
+    <input type="hidden" name="id" value="{{ s.id }}">
+    <button type="submit" class="btn-delete-schedule">
+        <span class="delete-icon">🗑️</span>
+        Eliminar
+    </button>
+</form>
                   </div>
                 </div>
               {% endfor %}
@@ -176,6 +190,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  
+  // ===================================================
+  // --- TU LÓGICA DE FILTROS (SIN CAMBIOS) ---
+  // ===================================================
   const dayFilter = document.getElementById('dayFilter');
   const routeFilter = document.getElementById('routeFilter');
   const clearFilters = document.getElementById('clearFilters');
@@ -185,23 +203,16 @@ document.addEventListener('DOMContentLoaded', function() {
   function applyFilters() {
     const selectedDay = dayFilter.value;
     const selectedRoute = routeFilter.value;
-
-    // Filtrar por día
     dayCards.forEach(card => {
       const cardDate = card.getAttribute('data-date');
       const dayMatch = !selectedDay || cardDate === selectedDay;
-      
       if (dayMatch) {
         card.style.display = 'block';
-        
-        // Filtrar rutas dentro del día
         const routesInCard = card.querySelectorAll('.route-section');
         let visibleRoutes = 0;
-        
         routesInCard.forEach(route => {
           const routeType = route.getAttribute('data-route');
           const routeMatch = !selectedRoute || routeType === selectedRoute;
-          
           if (routeMatch) {
             route.style.display = 'block';
             visibleRoutes++;
@@ -209,8 +220,6 @@ document.addEventListener('DOMContentLoaded', function() {
             route.style.display = 'none';
           }
         });
-        
-        // Ocultar la card del día si no hay rutas visibles
         if (selectedRoute && visibleRoutes === 0) {
           card.style.display = 'none';
         }
@@ -227,10 +236,219 @@ document.addEventListener('DOMContentLoaded', function() {
     routeSections.forEach(section => section.style.display = 'block');
   }
 
-  dayFilter.addEventListener('change', applyFilters);
-  routeFilter.addEventListener('change', applyFilters);
-  clearFilters.addEventListener('click', clearAllFilters);
+  if (dayFilter) dayFilter.addEventListener('change', applyFilters);
+  if (routeFilter) routeFilter.addEventListener('change', applyFilters);
+  if (clearFilters) clearFilters.addEventListener('click', clearAllFilters);
+  
+  // ===================================================
+  // --- NUEVA LÓGICA PARA EL MODAL (POP-UP) ---
+  // ===================================================
+  
+  const modal = document.getElementById('actionModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalText = document.getElementById('modalText');
+  const modalBtnSingle = document.getElementById('modalActionSingle');
+  const modalBtnRecurring = document.getElementById('modalActionRecurring');
+  const modalBtnCancel = document.getElementById('modalCancel');
+
+  // Cierra el modal
+  function closeModal() {
+    modal.style.display = 'none';
+    modalBtnSingle.onclick = null;
+    modalBtnRecurring.onclick = null;
+  }
+  
+  if (modalBtnCancel) modalBtnCancel.addEventListener('click', closeModal);
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
+
+
+  // --- LÓGICA PARA "GUARDAR HORARIO" (ARREGLADA) ---
+  const addBtn = document.getElementById('showAddModalBtn');
+  
+  if (addBtn) {
+    addBtn.addEventListener('click', function() {
+      // Busca el formulario CADA VEZ que se hace clic
+      const addForm = document.getElementById('addScheduleForm');
+      if (!addForm) {
+        alert("Error de programador: No se encontró el formulario con id='addScheduleForm'");
+        return;
+      }
+      
+      if (!addForm.checkValidity()) {
+        addForm.reportValidity();
+        return;
+      }
+      
+      const dateInput = addForm.querySelector('input[name="date"]');
+      const dateVal = new Date(dateInput.value + 'T00:00:00'); // Ajuste zona horaria
+      const dayName = dateVal.toLocaleDateString('es-ES', { weekday: 'long' });
+
+      modalTitle.textContent = 'Confirmar Creación';
+      modalText.textContent = '¿Cómo quieres guardar este horario?';
+      modalBtnSingle.textContent = `Solo para este día (${dateInput.value})`;
+      modalBtnRecurring.textContent = `Hacer recurrente (Todos los ${dayName}s)`;
+      
+      modalBtnRecurring.style.display = 'block';
+      modal.style.display = 'flex';
+      
+      // Asignar acciones a los botones del modal
+      modalBtnSingle.onclick = () => {
+        const saveInput = addForm.querySelector('#saveTypeInput');
+        if (!saveInput) {
+           alert("Error de programador: No se encontró el input con id='saveTypeInput'");
+           return;
+        }
+        saveInput.value = 'single';
+        addForm.submit();
+      };
+      
+      modalBtnRecurring.onclick = () => {
+        const saveInput = addForm.querySelector('#saveTypeInput');
+        if (!saveInput) {
+           alert("Error de programador: No se encontró el input con id='saveTypeInput'");
+           return;
+        }
+        saveInput.value = 'recurring';
+        addForm.submit();
+      };
+    });
+  } else {
+    console.warn("No se encontró el botón con id='showAddModalBtn'");
+  }
+  
+  
+  // --- LÓGICA PARA "ELIMINAR" (VERIFICADA) ---
+  const deleteForms = document.querySelectorAll('.delete-form');
+  
+  deleteForms.forEach(form => {
+    const deleteButton = form.querySelector('button[type="submit"]');
+    if (deleteButton) {
+      deleteButton.addEventListener('click', function(e) {
+        e.preventDefault(); // Detener envío
+        
+        // Lee los atributos DATA del formulario
+        const recurringId = form.dataset.recurringId;
+        const scheduleInfo = form.dataset.scheduleInfo;
+
+        modalTitle.textContent = 'Confirmar Borrado';
+        modalText.textContent = `¿Cómo quieres borrar el horario de ${scheduleInfo}?`;
+        modalBtnSingle.textContent = 'Borrar solo este día';
+
+        // Acción para "Solo este día" (siempre disponible)
+        modalBtnSingle.onclick = () => {
+          form.submit(); // Envía el formulario original a /admin/delete_schedule
+        };
+
+        // Acción para "Recurrente" (CONDICIONAL)
+        // ESTA ES LA LÓGICA DEL PROBLEMA 1
+        if (recurringId && recurringId !== "") {
+          // Si hay un ID recurrente, muestra el botón
+          modalBtnRecurring.textContent = 'Borrar este y todos los futuros';
+          modalBtnRecurring.style.display = 'block';
+          
+          modalBtnRecurring.onclick = () => {
+            const recurringForm = document.createElement('form');
+            recurringForm.method = 'POST';
+            recurringForm.action = "{{ url_for('admin_delete_recurring_schedule') }}"; 
+            
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'id';
+            hiddenInput.value = recurringId;
+            recurringForm.appendChild(hiddenInput);
+            
+            document.body.appendChild(recurringForm);
+            recurringForm.submit();
+          };
+        } else {
+          // Si no hay ID, oculta el botón.
+          modalBtnRecurring.style.display = 'none';
+          modalBtnRecurring.onclick = null;
+        }
+        
+        modal.style.display = 'flex';
+      });
+    }
+  });
+
 });
 </script>
+
+<style>
+  /* Estilos básicos para el modal (no afectarán tu diseño) */
+  .modal-backdrop-subite {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: none; /* Oculto por defecto */
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content-subite {
+    background: #333; /* Un color oscuro para que combine */
+    color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+  }
+  .modal-content-subite h3 {
+    margin-top: 0;
+    font-size: 1.5rem;
+  }
+  .modal-content-subite p {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    color: #ccc;
+  }
+  .modal-actions-subite {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  /* Re-usamos tus clases de botones si es posible, o definimos genéricos */
+  .modal-actions-subite button {
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .modal-btn-primary {
+    background-color: #4CAF50; /* Verde (para recurrente) */
+    color: white;
+  }
+  .modal-btn-secondary {
+    background-color: #666; /* Gris (para un solo día) */
+    color: white;
+  }
+  .modal-btn-cancel {
+    background-color: #f44336; /* Rojo (para cancelar) */
+    color: white;
+  }
+</style>
+
+<div id="actionModal" class="modal-backdrop-subite">
+  <div class="modal-content-subite">
+    <h3 id="modalTitle">Confirmar Acción</h3>
+    <p id="modalText">¿Cómo deseas proceder?</p>
+    <div class="modal-actions-subite">
+      <button id="modalActionSingle" class="modal-btn-secondary">Acción 1 (Solo este día)</button>
+      <button id="modalActionRecurring" class="modal-btn-primary">Acción 2 (Recurrente)</button>
+      <button id="modalCancel" class="modal-btn-cancel">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

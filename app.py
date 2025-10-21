@@ -8,6 +8,7 @@ import requests
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
@@ -18,6 +19,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'cambiame-por-uno-seguro')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(DATA_DIR / 'subite.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'subite2025')
 PICKUP_API_URL = os.getenv('PICKUP_API_URL')  # Optional, fallback to demo
@@ -56,12 +58,24 @@ class PriceConfig(db.Model):
     key = db.Column(db.String(64), primary_key=True)
     value = db.Column(db.Float, nullable=False)
 
+class RecurringSchedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    route = db.Column(db.String(32), nullable=False)
+    day_of_week = db.Column(db.Integer, nullable=False) # 0=Lunes... 6=Domingo
+    time = db.Column(db.String(5), nullable=False)
+    capacity = db.Column(db.Integer, nullable=False, default=CAPACITY_PER_TRIP)
+    __table_args__ = (
+        db.UniqueConstraint('route', 'day_of_week', 'time', name='_route_day_time_uc'),
+    )
+
 class TripSchedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     route = db.Column(db.String(32), nullable=False)  # 'RC-CBA' or 'CBA-RC'
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.String(5), nullable=False)  # 'HH:MM'
     capacity = db.Column(db.Integer, nullable=False, default=CAPACITY_PER_TRIP)
+    created_from_recurring_id = db.Column(db.Integer, db.ForeignKey('recurring_schedule.id'), nullable=True)
+    recurring_template = db.relationship('RecurringSchedule')
 
 class SharedBooking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -176,19 +190,35 @@ def price(key, default=0.0):
     return pc.value if pc else default
 
 def ensure_day_slots(route, on_date):
-    """Crear los horarios esperados para una ruta y fecha según tu esquema.
-       Usa lista de domingos reducida si on_date es domingo (weekday()==6).
+    """Crear los horarios esperados para una ruta y fecha DESDE LA BD.
+       Usa la tabla RecurringSchedule según el día de la semana.
     """
-    # elegir slots según día
-    if on_date.weekday() == 6:  # domingo
-        slots = SLOTS_SUNDAY.get(route, [])
-    else:
-        slots = SLOTS_WEEKDAY.get(route, [])
+    
+    # 1. Obtener el día de la semana (0=Lunes, 6=Domingo)
+    day_num = on_date.weekday()
+    
+    # 2. Buscar las plantillas recurrentes para ese día y ruta
+    slot_templates = RecurringSchedule.query.filter_by(
+        route=route, 
+        day_of_week=day_num
+    ).all()
 
-    for hhmm in slots:
-        exists = TripSchedule.query.filter_by(route=route, date=on_date, time=hhmm).first()
+    # 3. Asegurar que existan en TripSchedule
+    for template in slot_templates:
+        exists = TripSchedule.query.filter_by(
+            route=route, 
+            date=on_date, 
+            time=template.time
+        ).first()
+        
         if not exists:
-            db.session.add(TripSchedule(route=route, date=on_date, time=hhmm, capacity=CAPACITY_PER_TRIP))
+            db.session.add(TripSchedule(
+                route=route, 
+                date=on_date, 
+                time=template.time, 
+                capacity=template.capacity,
+                created_from_recurring_id=template.id # Guardamos la referencia
+            ))
     db.session.commit()
 
 def booked_seats(schedule_id):
@@ -218,6 +248,42 @@ def login_required(f):
 
 def now_hhmm():
     return datetime.now().strftime('%H:%M')
+
+def seed_recurring_schedules():
+    """Puebla la tabla RecurringSchedule desde los diccionarios fijos."""
+    print("Poblando horarios recurrentes...")
+    db.session.query(RecurringSchedule).delete() # Borra todos para empezar de 0
+    
+    try:
+        # Lunes a Sábado (0-5)
+        for day in range(0, 6): 
+            for route, times in SLOTS_WEEKDAY.items():
+                for time in times:
+                    sch = RecurringSchedule(
+                        route=route, 
+                        day_of_week=day, 
+                        time=time, 
+                        capacity=CAPACITY_PER_TRIP
+                    )
+                    db.session.add(sch)
+        
+        # Domingo (6)
+        day = 6 
+        for route, times in SLOTS_SUNDAY.items():
+            for time in times:
+                sch = RecurringSchedule(
+                    route=route, 
+                    day_of_week=day, 
+                    time=time, 
+                    capacity=CAPACITY_PER_TRIP
+                )
+                db.session.add(sch)
+        
+        db.session.commit()
+        print("Horarios recurrentes poblados exitosamente.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error al poblar horarios: {e}. ¿Quizás ya existían (UniqueConstraint)?")
 
 # --- Routes ---
 @app.route('/')
@@ -821,7 +887,10 @@ def admin_schedules():
     today = date.today()
 
     if request.method == 'POST':
-        # Operación por día: agregar o actualizar un horario para una fecha concreta
+        # --- LÓGICA DE CREACIÓN (MODIFICADA) ---
+        
+        save_type = request.form.get('save_type', 'single') # 'single' o 'recurring'
+        
         route = request.form.get('route')
         date_str = request.form.get('date')
         time_str = request.form.get('time')
@@ -840,30 +909,71 @@ def admin_schedules():
             flash('Fecha inválida.', 'error')
             return redirect(url_for('admin_schedules'))
 
-        exists = TripSchedule.query.filter_by(route=route, date=on_date, time=time_str).first()
-        if exists:
-            exists.capacity = cap
-            flash('Horario actualizado.', 'success')
-        else:
-            db.session.add(TripSchedule(route=route, date=on_date, time=time_str, capacity=cap))
-            flash('Horario agregado para la fecha indicada.', 'success')
-        db.session.commit()
-        return redirect(url_for('admin_schedules'))
+        # --- RAMA 2: GUARDAR RECURRENTE (¡CORREGIDA!) ---
+        if save_type == 'recurring':
+            day_of_week = on_date.weekday() # 0=Lunes, 6=Domingo
+            
+            exists = RecurringSchedule.query.filter_by(
+                route=route, day_of_week=day_of_week, time=time_str
+            ).first()
+            
+            if exists:
+                flash(f'Ya existe una plantilla recurrente para los {on_date.strftime("%A")}s a las {time_str}.', 'error')
+            else:
+                new_template = RecurringSchedule(
+                    route=route,
+                    day_of_week=day_of_week,
+                    time=time_str,
+                    capacity=cap
+                )
+                db.session.add(new_template)
+                db.session.commit() # Guarda la plantilla
+                flash(f'Nueva plantilla recurrente creada para los {on_date.strftime("%A")}s.', 'success')
+                
+                # --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+                # Ahora, rellenamos los próximos 366 días
+                print(f"Rellenando {day_of_week}s (weekday) para {route} a las {time_str}...")
+                for i in range(366): 
+                    check_date = today + dtime(days=i)
+                    if check_date.weekday() == day_of_week:
+                        # ensure_day_slots es inteligente y no duplica
+                        ensure_day_slots(route, check_date)
+                # --- FIN DE LA CORRECCIÓN ---
+            
+            # Redirigimos con 'no_ensure' para evitar el bug de re-creación
+            return redirect(url_for('admin_schedules', no_ensure=1))
 
-    # asegurar que existan slots base para próximos 7 días (comportamiento anterior)
+        # --- RAMA 1: GUARDAR UN SOLO DÍA (Lógica anterior) ---
+        else: # save_type == 'single'
+            exists = TripSchedule.query.filter_by(route=route, date=on_date, time=time_str).first()
+            if exists:
+                exists.capacity = cap
+                flash('Horario actualizado.', 'success')
+            else:
+                db.session.add(TripSchedule(
+                    route=route, 
+                    date=on_date, 
+                    time=time_str, 
+                    capacity=cap,
+                    created_from_recurring_id=None
+                ))
+                flash('Horario agregado para la fecha indicada.', 'success')
+            db.session.commit()
+            # Redirigimos con 'no_ensure' para evitar el bug de re-creación
+            return redirect(url_for('admin_schedules', no_ensure=1))
+
+    # --- LÓGICA GET (Sin cambios) ---
     if not request.args.get('no_ensure'):
         for i in range(0, 7):
             d = today + dtime(days=i)
             ensure_day_slots('RC-CBA', d)
             ensure_day_slots('CBA-RC', d)
 
-    # mostrar solo horarios futuros y, para hoy, solo horarios >= hora actual
     now = datetime.now().strftime('%H:%M')
     scheds = TripSchedule.query.filter(
         (TripSchedule.date > today) | ((TripSchedule.date == today) & (TripSchedule.time >= now))
     ).order_by(TripSchedule.date.asc(), TripSchedule.route.asc(), TripSchedule.time.asc()).all()
 
-    # Agrupar por día y por ruta
     from collections import OrderedDict
     grouped = []
     for s in scheds:
@@ -872,12 +982,12 @@ def admin_schedules():
         routes = grouped[-1]['routes']
         if s.route not in routes:
             routes[s.route] = []
-        routes[s.route].append(s)
+        routes[s.route].append(s) 
+    
     for g in grouped:
         g['routes'] = [{'route': r, 'schedules': sl} for r, sl in g['routes'].items()]
 
     return render_template('admin_schedules.html', grouped_schedules=grouped, booked_seats=booked_seats)
-
 
 @app.route('/admin/bookings')
 @login_required
@@ -969,13 +1079,18 @@ def admin_delete_schedule():
         return redirect(url_for('admin_schedules'))
 
     try:
-        sched = TripSchedule.query.get(int(sched_id))
+        # Usamos get_or_404 para simplificar
+        sched = TripSchedule.query.get_or_404(int(sched_id))
     except Exception:
-        sched = None
-
-    if not sched:
         flash('Horario no encontrado', 'error')
         return redirect(url_for('admin_schedules'))
+        
+    # --- VERIFICACIÓN CLAVE ---
+    # Comprobamos si hay reservas para este viaje
+    if len(sched.bookings) > 0:
+        flash(f'No se puede eliminar. El viaje del {sched.date.strftime("%d/%m")} a las {sched.time} ya tiene reservas.', 'error')
+        return redirect(url_for('admin_schedules'))
+    # --- FIN DE VERIFICACIÓN ---
 
     try:
         db.session.delete(sched)
@@ -983,16 +1098,103 @@ def admin_delete_schedule():
         flash('Horario eliminado correctamente', 'success')
     except Exception as e:
         db.session.rollback()
-        flash('Error al eliminar horario', 'error')
+        # Damos un error más específico
+        flash(f'Error al eliminar horario: {str(e)}', 'error')
 
-    return redirect(url_for('admin_schedules'))
+    return redirect(url_for('admin_schedules', no_ensure=1))
+
+@app.route('/admin/delete_recurring_schedule', methods=['POST'])
+@login_required
+def admin_delete_recurring_schedule():
+    template_id = request.form.get('id')
+    template = RecurringSchedule.query.get_or_404(template_id)
+    
+    today = date.today()
+    future_trips = TripSchedule.query.filter(
+        TripSchedule.created_from_recurring_id == template.id,
+        TripSchedule.date >= today
+    ).all()
+
+    # 1. Revisar si alguno tiene reservas
+    for trip in future_trips:
+        if len(trip.bookings) > 0:
+            flash(f'No se puede eliminar. El viaje recurrente del {trip.date.strftime("%d/%m")} a las {trip.time} tiene reservas.', 'error')
+            
+            return redirect(url_for('admin_schedules'))
+            
+    try:
+        # 2. Si no hay reservas, borrar los viajes futuros
+        for trip in future_trips:
+            db.session.delete(trip)
+            
+        # 3. Borrar la plantilla
+        db.session.delete(template)
+        
+        db.session.commit()
+        flash('Plantilla recurrente y todos sus viajes futuros (sin reservas) eliminados.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar: {e}', 'error')
+
+    return redirect(url_for('admin_schedules', no_ensure=1))
+
+
+def backfill_recurring_links():
+    """
+    Actualiza los TripSchedule antiguos (sin ID recurrente) para vincularlos
+    a las plantillas de RecurringSchedule recién creadas.
+    """
+    print("Iniciando backfill de IDs recurrentes...")
+    
+    # 1. Traer todas las plantillas a memoria para búsquedas rápidas
+    templates = RecurringSchedule.query.all()
+    template_map = {} # { (route, day_of_week, time): template_id }
+    for t in templates:
+        template_map[(t.route, t.day_of_week, t.time)] = t.id
+    
+    print(f"Mapa de {len(template_map)} plantillas recurrentes creado.")
+
+    # 2. Buscar todos los viajes que NO tienen un ID recurrente
+    trips_to_update = TripSchedule.query.filter_by(created_from_recurring_id=None).all()
+    
+    print(f"Se encontraron {len(trips_to_update)} viajes para actualizar.")
+    
+    updated_count = 0
+    # 3. Iterar y vincular
+    for trip in trips_to_update:
+        day_num = trip.date.weekday()
+        key = (trip.route, day_num, trip.time)
+        
+        # Buscar en el mapa si existe una plantilla que coincida
+        matching_id = template_map.get(key)
+        
+        if matching_id:
+            trip.created_from_recurring_id = matching_id
+            updated_count += 1
+            
+    if updated_count > 0:
+        try:
+            db.session.commit()
+            print(f"¡Éxito! {updated_count} viajes han sido vinculados.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error al hacer commit de los vínculos: {e}")
+    else:
+        print("No se necesitaron actualizaciones (o no se encontraron coincidencias).")
 
 # CLI init
 @app.cli.command('initdb')
 def initdb():
     db.create_all()
     seed_prices()
-    print('DB initialized & prices seeded.')
+    seed_recurring_schedules() # Añade esta línea
+    print('DB initialized, prices seeded, and recurring schedules seeded.')
+
+@app.cli.command('backfill-links')
+def backfill_links_command():
+    """Vincula TripSchedules existentes a sus plantillas recurrentes."""
+    with app.app_context():
+        backfill_recurring_links()
 
 if __name__ == '__main__':
     with app.app_context():
